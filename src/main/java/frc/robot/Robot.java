@@ -4,14 +4,48 @@
 
 package frc.robot;
 
+import java.util.Map;
+
+import org.littletonrobotics.urcl.URCL;
+
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
+import frc.robot.Constants.ControllerConstants;
+import frc.robot.subsystems.DriveSubsystem;
 
 public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
+	private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
+	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
+			ControllerConstants.kDriverControllerPort);
+	private final PowerDistribution m_pdh = new PowerDistribution();
 
 	public Robot() {
+		SmartDashboard.putData(m_pdh);
+		SmartDashboard.putData(CommandScheduler.getInstance());
+		DataLogManager.start();
+		DataLogManager.logNetworkTables(true);
+		URCL.start(
+				Map.of(
+						10, "FR Drive", 11, "FR Turn", 20, "BR Drive", 21, "BR Turn", 30, "BL Drive", 31, "BL Turn",
+						40, "FL Drive", 41, "FL Turn"));
+		DriverStation.startDataLog(DataLogManager.getLog());
+		bindDriveControls();
+	}
+
+	public void bindDriveControls() {
+		m_driveSubsystem.setDefaultCommand(
+				m_driveSubsystem.driveCommand(
+						() -> -m_driverController.getLeftY(),
+						() -> -m_driverController.getLeftX(),
+						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
+						m_driverController.getHID()::getSquareButton));
 	}
 
 	@Override
@@ -33,6 +67,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void autonomousInit() {
+		m_autonomousCommand = null;
 
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
