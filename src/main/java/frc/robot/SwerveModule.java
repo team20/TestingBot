@@ -72,8 +72,6 @@ public class SwerveModule {
 	 * @return The position in meters.
 	 */
 	public double getDriveEncoderPosition() {
-		if (RobotBase.isSimulation())
-			return m_driveMotorSim.getRelativeEncoderSim().getPosition() * kMetersPerMotorRotation;
 		return m_driveMotor.getEncoder().getPosition() * kMetersPerMotorRotation;
 	}
 
@@ -82,8 +80,6 @@ public class SwerveModule {
 	}
 
 	public double getDriveCurrent() {
-		if (RobotBase.isSimulation())
-			return m_driveMotorSim.getMotorCurrent();
 		return m_driveMotor.getOutputCurrent();
 	}
 
@@ -91,8 +87,6 @@ public class SwerveModule {
 	 * Resets drive encoder to zero.
 	 */
 	public void resetDriveEncoder() {
-		if (RobotBase.isSimulation())
-			m_driveMotorSim.getRelativeEncoderSim().setPosition(0);
 		m_driveMotor.getEncoder().setPosition(0);
 	}
 
@@ -102,9 +96,7 @@ public class SwerveModule {
 	 * @return The motor speed in voltage
 	 */
 	public double getDriveVoltage() {
-		if (RobotBase.isSimulation())
-			return m_driveMotorSim.getAppliedOutput();
-		return m_driveMotor.getAppliedOutput();
+		return m_driveMotor.getAppliedOutput() * 32;
 	}
 
 	/**
@@ -171,20 +163,12 @@ public class SwerveModule {
 	 */
 	private void updateSim() {
 		if (RobotBase.isSimulation()) {
-			// var driveMotorState = m_driveMotor.getSimState();
-			// m_driveMotorModel.setInputVoltage(driveMotorState.getMotorVoltage());
 			m_driveMotorSim.iterate(30, 32, 0.02);
 			m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * 12);
 			m_driveMotorModel.update(0.02);
-
 			m_driveMotorSim.setPosition(m_driveMotorModel.getAngularPositionRotations());
 			m_driveMotorSim.setVelocity(m_driveMotorModel.getAngularVelocityRPM());
 
-			// driveMotorState.setRotorVelocity(m_driveMotorModel.getAngularVelocityRPM() /
-			// 60);
-			// driveMotorState.setRawRotorPosition(m_driveMotorModel.getAngularPositionRotations());
-			// These used to be CAN IDs, but apparently any other value causes complete
-			// destabilization of the swerve sim. Do not touch.
 			m_steerMotorSim.iterate(30, 32, 0.02);
 			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * 12);
 			m_steerMotorModel.update(0.02);

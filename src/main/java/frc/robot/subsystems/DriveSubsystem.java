@@ -169,9 +169,9 @@ public class DriveSubsystem extends SubsystemBase {
 	/**
 	 * Drives the robot.
 	 * 
-	 * @param speedFwd The forward speed in voltage
-	 * @param speedSide The sideways speed in voltage
-	 * @param speedRot The rotation speed in voltage
+	 * @param speedFwd The forward speed in meters per second
+	 * @param speedSide The sideways speed in meters per second
+	 * @param speedRot The rotation speed in radians per second
 	 * @param isFieldRelative Whether or not the speeds are relative to the field
 	 */
 	public void drive(double speedFwd, double speedSide, double speedRot, boolean isFieldRelative) {
@@ -280,8 +280,8 @@ public class DriveSubsystem extends SubsystemBase {
 	 * @return a {@code Command} for testing this {@code DriveSubsystem}
 	 */
 	public Command testCommand() {
-		double speed = 0.3;
-		double rotionalSpeed = 0.6;
+		double speed = .2;
+		double rotionalSpeed = Math.toRadians(20);
 		double duration = 2.0;
 		return run(() -> setModuleAngles(0)).withTimeout(1)
 				.andThen(run(() -> drive(speed, 0, 0, false)).withTimeout(duration))
