@@ -13,6 +13,7 @@ import java.util.function.DoubleSupplier;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
+import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -24,7 +25,10 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.ControllerConstants;
@@ -40,16 +44,22 @@ public class DriveSubsystem extends SubsystemBase {
 			kFrontLeftLocation, kFrontRightLocation, kBackLeftLocation, kBackRightLocation);
 	private final SwerveDriveOdometry m_odometry;
 	private final AHRS m_gyro = new AHRS(NavXComType.kMXP_SPI);
+	private final SimDouble m_gyroSim = new SimDeviceSim("navX-Sensor", m_gyro.getPort()).getDouble("Yaw");
 	// https://docs.wpilib.org/en/latest/docs/software/advanced-controls/system-identification/index.html
 	private final SysIdRoutine m_sysidRoutine;
 
 	private final StructPublisher<Pose2d> m_posePublisher;
+	private final StructPublisher<ChassisSpeeds> m_currentChassisSpeedsPublisher;
 	private final StructArrayPublisher<SwerveModuleState> m_targetModuleStatePublisher;
 	private final StructArrayPublisher<SwerveModuleState> m_currentModuleStatePublisher;
 
 	/** Creates a new DriveSubsystem. */
 	public DriveSubsystem() {
-		m_posePublisher = NetworkTableInstance.getDefault().getStructTopic("/SmartDashboard/Pose", Pose2d.struct)
+		m_posePublisher = NetworkTableInstance.getDefault()
+				.getStructTopic("/SmartDashboard/Pose@DriveSubsystem", Pose2d.struct)
+				.publish();
+		m_currentChassisSpeedsPublisher = NetworkTableInstance.getDefault()
+				.getStructTopic("/SmartDashboard/Chassis Speeds", ChassisSpeeds.struct)
 				.publish();
 		m_targetModuleStatePublisher = NetworkTableInstance.getDefault()
 				.getStructArrayTopic("/SmartDashboard/Target Swerve Modules States", SwerveModuleState.struct)
@@ -165,15 +175,24 @@ public class DriveSubsystem extends SubsystemBase {
 	 * @param isFieldRelative Whether or not the speeds are relative to the field
 	 */
 	public void drive(double speedFwd, double speedSide, double speedRot, boolean isFieldRelative) {
+		if (RobotBase.isSimulation()) {
+			// TODO: Use SysId to get feedforward model for rotation
+			m_gyroSim.set(-speedRot * 20 * 0.02 + m_gyro.getYaw());
+		}
 		setModuleStates(calculateModuleStates(new ChassisSpeeds(speedFwd, speedSide, speedRot), isFieldRelative));
 	}
 
+	/**
+	 * Is invoked periodically by the {@link CommandScheduler}. Useful
+	 * for updating subsystem-specific state.
+	 */
 	@Override
 	public void periodic() {
 		m_posePublisher.set(m_odometry.update(getHeading(), getModulePositions()));
 		SwerveModuleState[] states = { m_frontLeft.getModuleState(), m_frontRight.getModuleState(),
 				m_backLeft.getModuleState(), m_backRight.getModuleState() };
 		m_currentModuleStatePublisher.set(states);
+		m_currentChassisSpeedsPublisher.set(m_kinematics.toChassisSpeeds(states));
 	}
 
 	/**
@@ -239,5 +258,37 @@ public class DriveSubsystem extends SubsystemBase {
 	 */
 	public Command sysidDynamic(SysIdRoutine.Direction direction) {
 		return m_sysidRoutine.dynamic(direction);
+	}
+
+	/**
+	 * Directly sets the module angle. Do not use for general driving.
+	 * 
+	 * @param angle The angle in degrees
+	 */
+	public void setModuleAngles(double angle) {
+		m_frontLeft.setAngle(angle);
+		m_frontRight.setAngle(angle);
+		m_backLeft.setAngle(angle);
+		m_backRight.setAngle(angle);
+	}
+
+	/**
+	 * Creates a {@code Command} for testing this {@code DriveSubsystem}. The robot
+	 * must move forward, backward, strafe left, strafe right, and turn left and
+	 * right.
+	 * 
+	 * @return a {@code Command} for testing this {@code DriveSubsystem}
+	 */
+	public Command testCommand() {
+		double speed = 0.3;
+		double rotionalSpeed = 0.6;
+		double duration = 2.0;
+		return run(() -> setModuleAngles(0)).withTimeout(1)
+				.andThen(run(() -> drive(speed, 0, 0, false)).withTimeout(duration))
+				.andThen(run(() -> drive(-speed, 0, 0, false)).withTimeout(duration))
+				.andThen(run(() -> drive(0, speed, 0, false)).withTimeout(duration))
+				.andThen(run(() -> drive(0, -speed, 0, false)).withTimeout(duration))
+				.andThen(run(() -> drive(0, 0, rotionalSpeed, false)).withTimeout(duration))
+				.andThen(run(() -> drive(0, 0, -rotionalSpeed, false)).withTimeout(duration));
 	}
 }
