@@ -141,7 +141,9 @@ public class DriveSubsystem extends SubsystemBase {
 		if (isFieldRelative) {
 			speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
 		}
+		// speeds --> target module states
 		SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(speeds);
+		// normalization
 		SwerveDriveKinematics.desaturateWheelSpeeds(states, kTeleopMaxVoltage);
 		// Get the current module angles
 		double[] moduleAngles = { m_frontLeft.getModuleAngle(), m_frontRight.getModuleAngle(),
