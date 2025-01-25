@@ -67,12 +67,12 @@ public class Robot extends TimedRobot {
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
 						m_driverController.getHID()::getSquareButton));
-		Transform2d robotToTarget = new Transform2d(.8, 0, Rotation2d.fromDegrees(180));
+		Transform2d robotToTarget = new Transform2d(1.5, 0, Rotation2d.fromDegrees(180));
 		m_driverController.button(Button.kSquare)
 				.whileTrue(
 						AlignCommand.moveToClosestTag(
 								m_driveSubsystem, m_poseEstimationSubystem, 90, 3, robotToTarget,
-								.1, 3));
+								.2, 10));
 	}
 
 	@Override
