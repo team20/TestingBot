@@ -1,6 +1,11 @@
 package frc.robot;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 
 public class Constants {
@@ -9,6 +14,27 @@ public class Constants {
 		public static final int kOperatorControllerPort = 1;
 		public static final double kDeadzone = 0.05;
 		public static final double kTriggerDeadzone = .05;
+
+		public static final class Button {
+			/** Left middle button */
+			public static final int kSquare = 1;
+			/** Bottom button */
+			public static final int kX = 2;
+			/** Right middle button */
+			public static final int kCircle = 3;
+			/** Top button */
+			public static final int kTriangle = 4;
+			public static final int kLeftBumper = 5;
+			public static final int kRightBumper = 6;
+			public static final int kLeftTrigger = 7;
+			public static final int kRightTrigger = 8;
+			public static final int kShare = 9;
+			public static final int kOptions = 10;
+			public static final int kLeftStick = 11;
+			public static final int kRightStick = 12;
+			public static final int kPS = 13;
+			public static final int kTrackpad = 14;
+		}
 	}
 
 	public static final class DriveConstants {
@@ -54,6 +80,36 @@ public class Constants {
 		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;
+
+		// DriveCommand.java Constants
+		public static final double kDriveP = 4; // up to 1.0?
+		// public static final double kDriveP = 0.4; // up to 1.0?
+		public static final double kDriveI = 0;
+		public static final double kDriveD = 0;
+		public static final double kDriveMaxVelocity = 3; // up to 5?
+		public static final double kDriveMaxAcceleration = 3; // up to 10?
+
+		public static final double kTurnP = 0.2; // was 0.005 upto 0.2?
+		// public static final double kTurnP = 0.02; // was 0.005 upto 0.2?
+		public static final double kTurnI = 0; // was 0.003
+		public static final double kTurnD = 0; // 0.0
+		public static final double kTurnMaxVelocity = 120; // up to 240?
+		public static final double kTurnMaxAcceleration = 240; // up to 360?
+
 	}
 
+	/**
+	 * The {@code AprilTagFieldLayout}.
+	 */
+	public static AprilTagFieldLayout kFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
+
+	public static final class RobotConstants {
+
+		/**
+		 * The {@code Transform3d} expressing the pose of the camera relative to the
+		 * pose of the robot.
+		 */
+		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.3, 0.0, 0.2),
+				new Rotation3d(0, Units.degreesToRadians(-20), 0));
+	}
 }
