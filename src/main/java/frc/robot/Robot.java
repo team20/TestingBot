@@ -8,8 +8,6 @@ import java.util.Map;
 
 import org.littletonrobotics.urcl.URCL;
 
-import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -27,21 +25,20 @@ public class Robot extends TimedRobot {
 	private final PowerDistribution m_pdh = new PowerDistribution();
 
 	public Robot() {
-		SmartDashboard.putData(m_pdh);
+		SmartDashboard.putData(m_pdh); // This publishes the power distribution data so we can see our voltage,
+										// currents of certain channels, etc
 		SmartDashboard.putData(CommandScheduler.getInstance());
-		DataLogManager.start();
-		DataLogManager.logNetworkTables(true);
-		URCL.start(
+		URCL.start( // Publishing the REV motor controllers
 				Map.of(
 						10, "FR Drive", 11, "FR Turn", 20, "BR Drive", 21, "BR Turn", 30, "BL Drive", 31, "BL Turn",
 						40, "FL Drive", 41, "FL Turn"));
-		DriverStation.startDataLog(DataLogManager.getLog());
 		bindDriveControls();
 	}
 
 	public void bindDriveControls() {
 		m_driveSubsystem.setDefaultCommand(
-				m_driveSubsystem.driveCommand(
+				m_driveSubsystem.driveCommand( // Joysticks binded to driving, taking the axis of each joystick and
+												// putting it into the drive command
 						() -> -m_driverController.getLeftY(),
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),

@@ -102,7 +102,7 @@ public class DriveSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Returns robot pose.
+	 * Returns robot pose (coordinate location).
 	 * 
 	 * @return The pose of the robot.
 	 */
