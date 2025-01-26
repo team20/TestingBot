@@ -34,6 +34,13 @@ public class Constants {
 		public static final double kV = 0.11;
 		public static final double kA = 0.009;
 
+		public static final double kDriveP = 0.2;
+		public static final double kDriveI = 0.0;
+		public static final double kDriveD = 0;
+		public static final double kDriveS = 0;
+		public static final double kDriveV = 1.8;
+		public static final double kDriveA = 0.009;
+
 		public static final double kTeleopMaxVoltage = 12;
 		public static final double kTeleopMaxTurnVoltage = 7.2;
 		public static final double kGearRatio = 6.12;
@@ -41,6 +48,9 @@ public class Constants {
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
 		public static final double kMetersPerMotorRotation = kWheelCircumference / kGearRatio;
+
+		public static final double kAutoXYTolerance = 0.05;
+		public static final double kAutoThetaTolerance = 5;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
 		public static final Translation2d kFrontLeftLocation = new Translation2d(0.381, 0.381);
