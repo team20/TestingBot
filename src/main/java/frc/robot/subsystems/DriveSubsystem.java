@@ -292,8 +292,8 @@ public class DriveSubsystem extends SubsystemBase {
 	 * @return a {@code Command} for testing this {@code DriveSubsystem}
 	 */
 	public Command testCommand() {
-		double speed = .8;
-		double rotionalSpeed = Math.toRadians(40);
+		double speed = .5;
+		double rotionalSpeed = Math.toRadians(45);
 		double duration = 2.0;
 		return run(() -> setModuleAngles(0)).withTimeout(1)
 				.andThen(run(() -> drive(speed, 0, 0, false)).withTimeout(duration))

@@ -57,7 +57,7 @@ public class SwerveModule {
 					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), kA / (2 * Math.PI)),
 					DCMotor.getKrakenX60(1).withReduction(kGearRatio));
 			m_steerMotorModel = new DCMotorSim(
-					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), 0.0001 / (2 * Math.PI)),
+					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), kA / (2 * Math.PI)),
 					DCMotor.getKrakenX60(1));
 		} else {
 			m_driveMotorModel = null;
