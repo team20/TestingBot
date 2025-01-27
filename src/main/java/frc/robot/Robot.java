@@ -5,13 +5,13 @@
 package frc.robot;
 
 import static frc.robot.Constants.RobotConstants.*;
+import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
 import java.util.Map;
 
 import org.littletonrobotics.urcl.URCL;
 import org.photonvision.PhotonCamera;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -40,10 +40,10 @@ public class Robot extends TimedRobot {
 	private final PowerDistribution m_pdh = new PowerDistribution();
 	PhotonCamera m_camera1 = RobotBase.isSimulation()
 			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_driveSubsystem,
-					new Pose2d(1, 1, Rotation2d.fromDegrees(0)),
+					pose(1, 1, 0),
 					0.01, 3,
 					0.1)
-			: new PhotonCamera("Cool camera"); // TODO: Check the camera name
+			: new PhotonCamera("Cool camera");
 	private final PoseEstimationSubsystem m_poseEstimationSubystem = new PoseEstimationSubsystem(m_driveSubsystem,
 			m_camera1);
 
@@ -60,10 +60,6 @@ public class Robot extends TimedRobot {
 		bindDriveControls();
 	}
 
-	public static Pose2d pose(double x, double y, double yawInDegrees) {
-		return new Pose2d(x, y, Rotation2d.fromDegrees(yawInDegrees));
-	}
-
 	public void bindDriveControls() {
 		m_driveSubsystem.setDefaultCommand(
 				m_driveSubsystem.driveCommand(
@@ -71,6 +67,7 @@ public class Robot extends TimedRobot {
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
 						m_driverController.getHID()::getSquareButton));
+
 		double distanceTolerance = 0.05;
 		double angleTolerance = 5;
 		m_driverController.button(Button.kSquare) // home
@@ -86,12 +83,22 @@ public class Robot extends TimedRobot {
 						new DriveCommand(
 								m_driveSubsystem, pose(2, 0, 0), distanceTolerance, angleTolerance));
 
-		Transform2d robotToTarget = new Transform2d(1.5, 0, Rotation2d.fromDegrees(180));
+		double angleOfCoverageInDegrees = 90;
+		double distanceThresholdInMeters = 4;
 		m_driverController.button(Button.kTriangle)
 				.whileTrue(
+						AlignCommand.turnToClosestTag(
+								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
+								distanceThresholdInMeters,
+								distanceTolerance, angleTolerance));
+
+		Transform2d robotToTarget = new Transform2d(1.5, 0, Rotation2d.fromDegrees(180));
+		m_driverController.button(Button.kLeftBumper)
+				.whileTrue(
 						AlignCommand.moveToClosestTag(
-								m_driveSubsystem, m_poseEstimationSubystem, 90, 3, robotToTarget,
-								.2, 10));
+								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
+								distanceThresholdInMeters, robotToTarget,
+								distanceTolerance, angleTolerance));
 	}
 
 	@Override

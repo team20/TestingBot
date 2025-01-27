@@ -1,14 +1,8 @@
 package frc.robot.commands;
 
-import static frc.robot.Constants.*;
-
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -35,12 +29,100 @@ public class AlignCommand extends Command {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static DriveCommand moveTo(DriveSubsystem driveSubsystem,
-			PoseEstimationSubsystem poseEstimationSubsystem,
+	public static DriveCommand moveTo(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
 			Pose2d targetPose, double distanceTolerance, double angleTolerance) {
-		return new DriveCommand(driveSubsystem, () -> poseEstimationSubsystem.getPose(),
-				() -> targetPose,
+		return moveTo(driveSubsystem, poseEstimationSubsystem, () -> targetPose, distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code DriveCommand} for moving the robot to the specified
+	 * target.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        {@code Pose2d} of the target.
+	 *        This is used at the commencement of the {@code DriveCommand} (i.e.,
+	 *        when the scheduler begins to periodically execute the
+	 *        {@code DriveCommand})
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @return a {@code Commmand} for moving the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand moveTo(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance) {
+		return new DriveCommand(driveSubsystem, () -> poseEstimationSubsystem.getEstimatedPose(),
+				targetPoseSupplier,
 				distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code DriveCommand} for turning the robot to the specified
+	 * target.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPose the {@code Pose2d} of the target
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @return a {@code Commmand} for turning the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand turnTo(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
+			Pose2d targetPose, double distanceTolerance, double angleTolerance) {
+		return turnTo(driveSubsystem, poseEstimationSubsystem, () -> targetPose, distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code DriveCommand} for turning the robot to the specified
+	 * target.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        {@code Pose2d} of the target.
+	 *        This is used at the commencement of the {@code DriveCommand} (i.e.,
+	 *        when the scheduler begins to periodically execute the
+	 *        {@code DriveCommand})
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @return a {@code Commmand} for turning the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand turnTo(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance) {
+		return new DriveCommand(driveSubsystem, () -> poseEstimationSubsystem.getEstimatedPose(),
+				() -> {
+					var transform = new Transform2d(0, 0,
+							poseEstimationSubsystem.angularDisplacement(targetPoseSupplier.get()));
+					return poseEstimationSubsystem.getEstimatedPose().plus(transform);
+				},
+				distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code DriveCommand} for moving the robot toward the specified
+	 * target position while ensuring that the robot is away from the target by the
+	 * specified distance.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimaitonSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPosition a {@code Translation2d} (i.e., the position) of the
+	 *        target.
+	 * @param distanceToTarget the desired distance between the robot and the
+	 *        target position
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @return a {@code Commmand} for turning the robot to the specified target
+	 *         position
+	 */
+	public static DriveCommand moveToward(DriveSubsystem driveSubsystem,
+			PoseEstimationSubsystem poseEstimaitonSubsystem, Translation2d targetPosition, double distanceToTarget,
+			double distanceTolerance, double angleTolerance) {
+		return moveToward(
+				driveSubsystem, poseEstimaitonSubsystem, () -> targetPosition, distanceToTarget, distanceTolerance,
+				angleTolerance);
 	}
 
 	/**
@@ -63,16 +145,40 @@ public class AlignCommand extends Command {
 	 *         position
 	 */
 	public static DriveCommand moveToward(DriveSubsystem driveSubsystem,
-			PoseEstimationSubsystem poseEstimaitonSubsystem,
-			Supplier<Translation2d> targetPositionSupplier,
-			double distanceToTarget,
-			double distanceTolerance,
-			double angleTolerance) {
-		Supplier<Pose2d> poseSupplier = () -> poseEstimaitonSubsystem.getPose();
+			PoseEstimationSubsystem poseEstimaitonSubsystem, Supplier<Translation2d> targetPositionSupplier,
+			double distanceToTarget, double distanceTolerance, double angleTolerance) {
+		Supplier<Pose2d> poseSupplier = () -> poseEstimaitonSubsystem.getEstimatedPose();
 		return new DriveCommand(driveSubsystem, poseSupplier,
-				() -> poseSupplier.get()
-						.plus(transformationToward(targetPositionSupplier.get(), poseSupplier.get(), distanceToTarget)),
+				() -> {
+					var transform = poseEstimaitonSubsystem
+							.transformationToward(targetPositionSupplier.get(), distanceToTarget);
+					return poseSupplier.get().plus(transform);
+				},
 				distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code DriveCommand} for turning the robot to the specified
+	 * target.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
+	 *        which {@code AprilTag}s are considered (maximum: 180)
+	 * @param distanceThresholdInMeters the maximum distance (in meters) within
+	 *        which {@code AprilTag}s are considered
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @return a {@code Commmand} for turning the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand turnToClosestTag(DriveSubsystem driveSubsystem,
+			PoseEstimationSubsystem poseEstimationSubsystem, double angleOfCoverageInDegrees,
+			double distanceThresholdInMeters, double distanceTolerance, double angleTolerance) {
+		return turnTo(
+				driveSubsystem, poseEstimationSubsystem,
+				() -> poseEstimationSubsystem.closestTagPose(angleOfCoverageInDegrees, distanceThresholdInMeters),
+				distanceThresholdInMeters, angleTolerance);
 	}
 
 	/**
@@ -94,103 +200,13 @@ public class AlignCommand extends Command {
 	 */
 	public static DriveCommand moveToClosestTag(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem, double angleOfCoverageInDegrees,
-			double distanceThresholdInMeters,
-			Transform2d robotToTarget, double distanceTolerance, double angleTolerance) {
-		return new DriveCommand(driveSubsystem, () -> poseEstimationSubsystem.getPose(),
-				() -> kFieldLayout
-						.getTagPose(
-								closestTagID(
-										poseEstimationSubsystem.getPose(), angleOfCoverageInDegrees,
-										distanceThresholdInMeters))
-						.get()
-						.toPose2d()
-						.transformBy(robotToTarget),
+			double distanceThresholdInMeters, Transform2d robotToTarget, double distanceTolerance,
+			double angleTolerance) {
+		return moveTo(
+				driveSubsystem, poseEstimationSubsystem,
+				() -> poseEstimationSubsystem.closestTagPose(angleOfCoverageInDegrees, distanceThresholdInMeters)
+						.plus(robotToTarget),
 				distanceTolerance, angleTolerance);
-	}
-
-	/**
-	 * Returns the transformation needed for the robot to face toward the specified
-	 * target position and remain the specified distance away fron the target
-	 * position.
-	 * 
-	 * @param targetPosition the target position whose x and y-coordinate values
-	 *        are in meters
-	 * @param distanceToTarget the desired distance in meters to the target
-	 * @return the transformation needed for the robot to face toward the specified
-	 *         target position and remain the specified distance away fron the
-	 *         target position; {@code null} if it has not been
-	 *         possible to reliably estimate the pose of the robot
-	 */
-	public static Transform2d transformationToward(Translation2d targetPosition, Pose2d currentPose,
-			double distanceToTarget) {
-		Translation2d diff = targetPosition.minus(currentPose.getTranslation());
-		if (diff.getNorm() == 0)
-			return null;
-		var targetPose = new Pose2d(
-				currentPose.getTranslation().plus(diff.times(1 - distanceToTarget / diff.getNorm())),
-				diff.getAngle());
-		return targetPose.minus(currentPose);
-	}
-
-	/**
-	 * Determines the ID of the {@code AprilTag} that is closest to the specified
-	 * {@code Pose2d} ({@code null} if no such {@code AprilTag}).
-	 * 
-	 * @param pose a {@code Pose2d}
-	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
-	 *        which {@code AprilTag}s are considered (maximum: 180)
-	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the ID of the {@code AprilTag} that is closest to the specified
-	 *         {@code Pose2d} ({@code null} if no such {@code AprilTag})
-	 */
-	public static Integer closestTagID(Pose2d pose, double angleOfCoverageInDegrees, double distanceThresholdInMeters) {
-		var s = kFieldLayout.getTags().stream()
-				// consider only the tags facing toward the robot
-				.filter(
-						t -> Math.abs(
-								t.pose.getTranslation().toTranslation2d().minus(pose.getTranslation()).getAngle()
-										.minus(t.pose.toPose2d().getRotation()).getDegrees()) > 90)
-				.filter( // consider only the tags within the angle of coverage
-						t -> Math.abs(
-								angularDisplacement(pose, t.pose.toPose2d()).getDegrees()) < angleOfCoverageInDegrees)
-				.map(t -> Map.entry(t.ID, Math.abs(translationalDisplacement(pose, t.pose.toPose2d())))) // distance
-				.filter(t -> t.getValue() < distanceThresholdInMeters); // only tags sufficently close
-		Optional<Entry<Integer, Double>> closest = s.reduce((e1, e2) -> e1.getValue() < e2.getValue() ? e1 : e2);
-		if (closest.isPresent()) {
-			return closest.get().getKey();
-		} else
-			return null;
-	}
-
-	/**
-	 * Calculates the angular displacement given the initial and last
-	 * {@code Pose2d}s.
-	 * 
-	 * @param initial the initial {@code Pose2d}
-	 * @param last the last {@code Pose2d}
-	 * @return the angular displacement given the initial and last
-	 *         {@code Pose2d}s
-	 */
-	public static Rotation2d angularDisplacement(Pose2d initial, Pose2d last) {
-		var t = last.getTranslation().minus(initial.getTranslation());
-		return t.getAngle().minus(initial.getRotation());
-	}
-
-	/**
-	 * Calculates the translational displacement given the initial and last
-	 * {@code Pose2d}s.
-	 * 
-	 * @param initial the initial {@code Pose2d}
-	 * @param last the last {@code Pose2d}
-	 * @return the translational displacement given the initial and last
-	 *         {@code Pose2d}s
-	 */
-	public static double translationalDisplacement(Pose2d initial, Pose2d last) {
-		var t = last.getTranslation().minus(initial.getTranslation());
-		return Math.abs(t.getAngle().minus(initial.getRotation()).getDegrees()) > 90
-				? -t.getNorm()
-				: t.getNorm();
 	}
 
 }
