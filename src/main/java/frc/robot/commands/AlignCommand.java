@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PoseEstimationSubsystem;
 
@@ -15,7 +14,30 @@ import frc.robot.subsystems.PoseEstimationSubsystem;
  * @author Jeong-Hyon Hwang (jhhbrown@gmail.com)
  * @author Andrew Hwang (u.andrew.h@gmail.com)
  */
-public class AlignCommand extends Command {
+public class AlignCommand extends DriveCommand {
+
+	/**
+	 * Constructs a new {@code DriveCommand} whose purpose is to move the
+	 * robot to a certain target pose.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        target pose to which the robot should move.
+	 *        This is used at the commencement of this
+	 *        {@code DriveCommand} (i.e., when the scheduler
+	 *        begins to periodically execute this
+	 *        {@code DriveCommand})
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 */
+	public AlignCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
+			Supplier<Pose2d> targetPoseSupplier,
+			double distanceTolerance,
+			double angleTolerance) {
+		super(driveSubsystem, () -> poseEstimationSubsystem.getEstimatedPose(), targetPoseSupplier, distanceTolerance,
+				angleTolerance);
+	}
 
 	/**
 	 * Constructs a {@code DriveCommand} for moving the robot to the specified
@@ -52,8 +74,7 @@ public class AlignCommand extends Command {
 	 */
 	public static DriveCommand moveTo(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance) {
-		return new DriveCommand(driveSubsystem, () -> poseEstimationSubsystem.getEstimatedPose(),
-				targetPoseSupplier,
+		return new AlignCommand(driveSubsystem, poseEstimationSubsystem, targetPoseSupplier,
 				distanceTolerance, angleTolerance);
 	}
 
@@ -92,7 +113,7 @@ public class AlignCommand extends Command {
 	 */
 	public static DriveCommand turnTo(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance) {
-		return new DriveCommand(driveSubsystem, () -> poseEstimationSubsystem.getEstimatedPose(),
+		return new AlignCommand(driveSubsystem, poseEstimationSubsystem,
 				() -> {
 					var transform = new Transform2d(0, 0,
 							poseEstimationSubsystem.angularDisplacement(targetPoseSupplier.get()));
@@ -107,7 +128,7 @@ public class AlignCommand extends Command {
 	 * specified distance.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
-	 * @param poseEstimaitonSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
 	 * @param targetPosition a {@code Translation2d} (i.e., the position) of the
 	 *        target.
 	 * @param distanceToTarget the desired distance between the robot and the
@@ -118,10 +139,10 @@ public class AlignCommand extends Command {
 	 *         position
 	 */
 	public static DriveCommand moveToward(DriveSubsystem driveSubsystem,
-			PoseEstimationSubsystem poseEstimaitonSubsystem, Translation2d targetPosition, double distanceToTarget,
+			PoseEstimationSubsystem poseEstimationSubsystem, Translation2d targetPosition, double distanceToTarget,
 			double distanceTolerance, double angleTolerance) {
 		return moveToward(
-				driveSubsystem, poseEstimaitonSubsystem, () -> targetPosition, distanceToTarget, distanceTolerance,
+				driveSubsystem, poseEstimationSubsystem, () -> targetPosition, distanceToTarget, distanceTolerance,
 				angleTolerance);
 	}
 
@@ -131,7 +152,7 @@ public class AlignCommand extends Command {
 	 * specified distance.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
-	 * @param poseEstimaitonSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
 	 * @param targetPositionSupplier a {@code Supplier<Pose2d>} that provides the
 	 *        target position.
 	 *        This is used at the commencement of the {@code DriveCommand} (i.e.,
@@ -145,14 +166,13 @@ public class AlignCommand extends Command {
 	 *         position
 	 */
 	public static DriveCommand moveToward(DriveSubsystem driveSubsystem,
-			PoseEstimationSubsystem poseEstimaitonSubsystem, Supplier<Translation2d> targetPositionSupplier,
+			PoseEstimationSubsystem poseEstimationSubsystem, Supplier<Translation2d> targetPositionSupplier,
 			double distanceToTarget, double distanceTolerance, double angleTolerance) {
-		Supplier<Pose2d> poseSupplier = () -> poseEstimaitonSubsystem.getEstimatedPose();
-		return new DriveCommand(driveSubsystem, poseSupplier,
+		return new AlignCommand(driveSubsystem, poseEstimationSubsystem,
 				() -> {
-					var transform = poseEstimaitonSubsystem
+					var transform = poseEstimationSubsystem
 							.transformationToward(targetPositionSupplier.get(), distanceToTarget);
-					return poseSupplier.get().plus(transform);
+					return poseEstimationSubsystem.getEstimatedPose().plus(transform);
 				},
 				distanceTolerance, angleTolerance);
 	}

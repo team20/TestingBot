@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
@@ -68,10 +69,29 @@ public class DriveCommand extends Command {
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, Pose2d targetPose,
-			double distanceTolerance,
+	public DriveCommand(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
 			double angleTolerance) {
 		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code DriveCommand} for moving the robot forward/backward by
+	 * the specified displacement.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param translationalDisplacement the displacement by which the robot to move
+	 *        (positive: forward, negative: backward) in meters
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @return a {@code Commmand} for moving the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand moveForward(DriveSubsystem driveSubsystem, double translationalDisplacement,
+			double distanceTolerance, double angleTolerance) {
+		return new DriveCommand(driveSubsystem, () -> driveSubsystem.getPose(), () -> {
+			var transform = new Transform2d(translationalDisplacement, 0, Rotation2d.kZero);
+			return driveSubsystem.getPose().plus(transform);
+		}, distanceTolerance, angleTolerance);
 	}
 
 	/**

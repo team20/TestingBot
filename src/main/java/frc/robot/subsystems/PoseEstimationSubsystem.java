@@ -26,6 +26,10 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+/**
+ * A {@code PoseEstimationSubsystem} continuously estimates the {@code Pose2d}
+ * of the robot on the field.
+ */
 public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
@@ -80,7 +84,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * 
 	 * @param driveSubsystem {@code DriveSubsystem} to be used by the
 	 *        {@code PoseEstimationSubsystem}
-	 * @param camera the {@code PhotonCamera}s to be used by the
+	 * @param cameras the {@code PhotonCamera}s to be used by the
 	 *        {@code PoseEstimationSubsystem} (found in the PhotonVision UI)
 	 */
 	public PoseEstimationSubsystem(DriveSubsystem driveSubsystem, PhotonCamera... cameras) {
@@ -134,7 +138,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest to the robot
 	 * ({@code null} if no such {@code AprilTag}).
 	 * 
-	 * @param pose a {@code Pose2d}
 	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
 	 *        which {@code AprilTag}s are considered (maximum: 180)
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
@@ -151,7 +154,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * Determines the ID of the {@code AprilTag} that is closest to the robot
 	 * ({@code null} if no such {@code AprilTag}).
 	 * 
-	 * @param pose a {@code Pose2d}
 	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
 	 *        which {@code AprilTag}s are considered (maximum: 180)
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within

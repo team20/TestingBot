@@ -76,12 +76,10 @@ public class Robot extends TimedRobot {
 								m_driveSubsystem, pose(0, 0, 0), distanceTolerance, angleTolerance));
 		m_driverController.button(Button.kX) // 1m away
 				.whileTrue(
-						new DriveCommand(
-								m_driveSubsystem, pose(1, 0, 0), distanceTolerance, angleTolerance));
+						DriveCommand.moveForward(m_driveSubsystem, 1, distanceTolerance, angleTolerance));
 		m_driverController.button(Button.kCircle) // 2m away
 				.whileTrue(
-						new DriveCommand(
-								m_driveSubsystem, pose(2, 0, 0), distanceTolerance, angleTolerance));
+						DriveCommand.moveForward(m_driveSubsystem, 2, distanceTolerance, angleTolerance));
 
 		double angleOfCoverageInDegrees = 90;
 		double distanceThresholdInMeters = 4;
