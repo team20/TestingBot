@@ -60,6 +60,10 @@ public class Robot extends TimedRobot {
 		bindDriveControls();
 	}
 
+	public static Pose2d pose(double x, double y, double yawInDegrees) {
+		return new Pose2d(x, y, Rotation2d.fromDegrees(yawInDegrees));
+	}
+
 	public void bindDriveControls() {
 		m_driveSubsystem.setDefaultCommand(
 				m_driveSubsystem.driveCommand(
@@ -67,8 +71,23 @@ public class Robot extends TimedRobot {
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
 						m_driverController.getHID()::getSquareButton));
+		double distanceTolerance = 0.05;
+		double angleTolerance = 5;
+		m_driverController.button(Button.kSquare) // home
+				.whileTrue(
+						new DriveCommand(
+								m_driveSubsystem, pose(0, 0, 0), distanceTolerance, angleTolerance));
+		m_driverController.button(Button.kX) // 1m away
+				.whileTrue(
+						new DriveCommand(
+								m_driveSubsystem, pose(1, 0, 0), distanceTolerance, angleTolerance));
+		m_driverController.button(Button.kCircle) // 2m away
+				.whileTrue(
+						new DriveCommand(
+								m_driveSubsystem, pose(2, 0, 0), distanceTolerance, angleTolerance));
+
 		Transform2d robotToTarget = new Transform2d(1.5, 0, Rotation2d.fromDegrees(180));
-		m_driverController.button(Button.kSquare)
+		m_driverController.button(Button.kTriangle)
 				.whileTrue(
 						AlignCommand.moveToClosestTag(
 								m_driveSubsystem, m_poseEstimationSubystem, 90, 3, robotToTarget,
