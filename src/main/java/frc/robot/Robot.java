@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
@@ -22,12 +23,12 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.ControllerConstants.Button;
 import frc.robot.commands.AlignCommand;
 import frc.robot.commands.DriveCommand;
+import frc.robot.subsystems.DriveSimulator;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -38,12 +39,13 @@ public class Robot extends TimedRobot {
 	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
+	DriveSimulator driveSimulator = new DriveSimulator(m_driveSubsystem, pose(1, 1, 0), 0.01);
 	PhotonCamera m_camera1 = RobotBase.isSimulation()
-			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_driveSubsystem,
-					pose(1, 1, 0),
-					0.01, 3,
-					0.1)
+			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, driveSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera");
+	PhotonCamera m_camera2 = RobotBase.isSimulation()
+			? new PhotonCameraSimulator("Camera2", kRobotToCamera2, driveSimulator, 3, 0.1)
+			: new PhotonCamera("Cool camera2");
 	private final PoseEstimationSubsystem m_poseEstimationSubystem = new PoseEstimationSubsystem(m_driveSubsystem,
 			m_camera1);
 
@@ -79,7 +81,9 @@ public class Robot extends TimedRobot {
 						DriveCommand.moveForward(m_driveSubsystem, 1, distanceTolerance, angleTolerance));
 		m_driverController.button(Button.kCircle) // 2m away
 				.whileTrue(
-						DriveCommand.moveForward(m_driveSubsystem, 2, distanceTolerance, angleTolerance));
+						sequence(
+								DriveCommand.moveForward(m_driveSubsystem, 2, distanceTolerance, angleTolerance),
+								DriveCommand.moveForward(m_driveSubsystem, -2, distanceTolerance, angleTolerance)));
 
 		double angleOfCoverageInDegrees = 90;
 		double distanceThresholdInMeters = 4;
@@ -151,10 +155,9 @@ public class Robot extends TimedRobot {
 	@Override
 	public void testInit() {
 		CommandScheduler.getInstance().cancelAll();
-		new WaitCommand(0)
-				.andThen(m_driveSubsystem.testCommand()) // F, B, SL, SR, RL, RR
-				.andThen(DriveCommand.testCommand(m_driveSubsystem))
-				.schedule();
+		sequence(
+				m_driveSubsystem.testCommand(), // F, B, SL, SR, RL, RR
+				DriveCommand.testCommand(m_driveSubsystem)).schedule();
 	}
 
 	@Override
