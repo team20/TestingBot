@@ -1,25 +1,38 @@
 package frc.robot.subsystems;
 
+import static frc.robot.Constants.*;
+
+import java.util.Optional;
 import java.util.Random;
 
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.VisionSystemSim;
+
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /**
- * A {@code DriveSimulator} aims to provide realistic simulations of the
- * {@code Pose2d} of the robot on the field.
+ * A {@code VisionSimulator} aims to provide realistic simulations of vision on
+ * the field.
  */
-public class DriveSimulator extends SubsystemBase {
+public class VisionSimulator extends SubsystemBase {
 
 	/**
-	 * The {@code DriveSubsystem} used by this {@code DriveSimulator}.
+	 * The {@code DriveSubsystem} used by this {@code VisionSimulator}.
 	 */
 	private final DriveSubsystem m_driveSubsystem;
+
+	/**
+	 * The {@code VisionSystemSim} used by this {@code VisionSimulator}.
+	 */
+	private final VisionSystemSim m_visionSimulator;
 
 	/**
 	 * The {@code Pose2d} of the robot in simulation.
@@ -27,7 +40,7 @@ public class DriveSimulator extends SubsystemBase {
 	private Pose2d m_pose;
 
 	/**
-	 * The previous {@code Pose2d} of the robot from the {@code DriveSubsystem}.
+	 * The previous {@code Pose2d} of the robot from the {@code VisionSimulator}.
 	 */
 	private Pose2d m_previousOdometryPose = null;
 
@@ -43,21 +56,23 @@ public class DriveSimulator extends SubsystemBase {
 	private final StructPublisher<Pose2d> m_posePublisher;
 
 	/**
-	 * The {@code Random} instance used by this {@code DriveSimulator}.
+	 * The {@code Random} instance used by this {@code VisionSimulator}.
 	 */
 	private final Random random = new Random(31);
 
 	/**
-	 * Constructs a {@code DriveSimulator}.
+	 * Constructs a {@code VisionSimulator}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to be used by the
-	 *        {@code PhotonCameraSimulator}
+	 *        {@code VisionSimulator}
 	 * @param initialPose the initial {@code Pose2d} of the robot in simulation
 	 * @param measurmentErrorRatio the error ratio in measurements for
 	 *        updating the odometry of the robot
 	 */
-	public DriveSimulator(DriveSubsystem driveSubsystem, Pose2d initialPose, double measurmentErrorRatio) {
+	public VisionSimulator(DriveSubsystem driveSubsystem, Pose2d initialPose, double measurmentErrorRatio) {
 		m_driveSubsystem = driveSubsystem;
+		m_visionSimulator = new VisionSystemSim("Simulator");
+		m_visionSimulator.addAprilTags(kFieldLayout);
 		m_pose = initialPose;
 		m_measurmentErrorRatio = measurmentErrorRatio;
 		m_posePublisher = NetworkTableInstance.getDefault()
@@ -78,6 +93,7 @@ public class DriveSimulator extends SubsystemBase {
 			m_pose = m_pose.plus(t);
 		}
 		m_previousOdometryPose = p;
+		m_visionSimulator.update(m_pose);
 		m_posePublisher.set(m_pose);
 	}
 
@@ -88,6 +104,27 @@ public class DriveSimulator extends SubsystemBase {
 	 */
 	public Pose2d getSimulatedPose() {
 		return m_pose;
+	}
+
+	/**
+	 * Adds the specified {@code PhotonCameraSim} to this {@code VisionSimulator}.
+	 * 
+	 * @param cameraSim a {@code PhotonCameraSim}
+	 * @param robotToCamera the {@code Transform3d} expressing the pose of the
+	 *        camera relative to the pose of the robot.
+	 */
+	public void addCamera(PhotonCameraSim cameraSim, Transform3d robotToCamera) {
+		m_visionSimulator.addCamera(cameraSim, robotToCamera);
+	}
+
+	/**
+	 * Returns the {@code Pose3d} of the specified {@code PhotonCameraSim}.
+	 * 
+	 * @param m_cameraSim a {@code PhotonCameraSim}
+	 * @return the {@code Pose3d} of the specified {@code PhotonCameraSim}
+	 */
+	public Optional<Pose3d> getCameraPose(PhotonCameraSim m_cameraSim) {
+		return m_visionSimulator.getCameraPose(m_cameraSim);
 	}
 
 	/**

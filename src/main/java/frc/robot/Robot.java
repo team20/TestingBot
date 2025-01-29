@@ -5,9 +5,11 @@
 package frc.robot;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
+import static frc.robot.Constants.*;
 import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.littletonrobotics.urcl.URCL;
@@ -28,10 +30,10 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.ControllerConstants.Button;
 import frc.robot.commands.AlignCommand;
 import frc.robot.commands.DriveCommand;
-import frc.robot.subsystems.DriveSimulator;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
+import frc.robot.subsystems.VisionSimulator;
 
 public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
@@ -39,15 +41,16 @@ public class Robot extends TimedRobot {
 	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
-	DriveSimulator driveSimulator = new DriveSimulator(m_driveSubsystem, pose(1, 1, 0), 0.01);
-	PhotonCamera m_camera1 = RobotBase.isSimulation()
-			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, driveSimulator, 3, 0.1)
+	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem, pose(1, 1, 0), 0.01);
+	private final PhotonCamera m_camera1 = RobotBase.isSimulation()
+			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_visionSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera");
-	PhotonCamera m_camera2 = RobotBase.isSimulation()
-			? new PhotonCameraSimulator("Camera2", kRobotToCamera2, driveSimulator, 3, 0.1)
+	private final PhotonCamera m_camera2 = RobotBase.isSimulation()
+			? new PhotonCameraSimulator("Camera2", kRobotToCamera2, m_visionSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera2");
-	private final PoseEstimationSubsystem m_poseEstimationSubystem = new PoseEstimationSubsystem(m_driveSubsystem,
-			m_camera1);
+	private final PoseEstimationSubsystem m_poseEstimationSubystem = new PoseEstimationSubsystem(m_driveSubsystem)
+			.addCamera(m_camera1, kRobotToCamera1)
+			.addCamera(m_camera2, kRobotToCamera2);
 
 	public Robot() {
 		SmartDashboard.putData(m_pdh);
@@ -101,6 +104,25 @@ public class Robot extends TimedRobot {
 								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
 								distanceThresholdInMeters, robotToTarget,
 								distanceTolerance, angleTolerance));
+
+		m_driverController.button(Button.kRightBumper)
+				.whileTrue(
+						tourCommand(
+								m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance, angleTolerance,
+								robotToTarget, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24));
+
+	}
+
+	Command tourCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubystem,
+			double distanceTolerance, double angleTolerance, Transform2d robotToTarget, int... tagIDs) {
+		var s = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i)).filter(p -> p.isPresent())
+				.map(p -> p.get())
+				.map(p -> p.toPose2d().plus(robotToTarget)).map(
+						p -> AlignCommand
+								.moveTo(
+										driveSubsystem, poseEstimationSubystem, p, distanceTolerance,
+										angleTolerance));
+		return sequence(s.toList().toArray(new Command[0]));
 	}
 
 	@Override

@@ -1,13 +1,10 @@
 package frc.robot.subsystems;
 
-import static frc.robot.Constants.*;
-
 import java.util.LinkedList;
 import java.util.List;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.simulation.PhotonCameraSim;
-import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -27,11 +24,6 @@ public class PhotonCameraSimulator extends PhotonCamera {
 	 * The {@code PhotonCameraSim} used by this {@code PhotonCameraSimulator}.
 	 */
 	private PhotonCameraSim m_cameraSim = null;
-
-	/**
-	 * The {@code VisionSystemSim} used by this {@code PhotonCameraSimulator}.
-	 */
-	private VisionSystemSim m_sim = null;
 
 	/**
 	 * The maximum artificial angular error to inject in radians.
@@ -66,7 +58,10 @@ public class PhotonCameraSimulator extends PhotonCamera {
 	 */
 	private final StructPublisher<Pose3d> m_cameraPosePublisher;
 
-	private DriveSimulator m_driveSimulator;
+	/**
+	 * The {@code VisionSimulator} used by this {@code PhotonCameraSimulator}.
+	 */
+	private VisionSimulator m_visionSimulator;
 
 	/**
 	 * Constructs a {@code PhotonCameraSimulator}.
@@ -75,7 +70,7 @@ public class PhotonCameraSimulator extends PhotonCamera {
 	 *        {@code PhotonCameraSimulator} (found in the PhotonVision UI)
 	 * @param robotToCamera the {@code Transform3d} expressing the pose of the
 	 *        camera relative to the pose of the robot.
-	 * @param driveSubsystem the {@code DriveSubsystem} to be used by the
+	 * @param visionSimulator the {@code VisionSimulator} to be used by the
 	 *        {@code PhotonCameraSimulator}
 	 * @param initialPose the initial {@code Pose2d} of the robot in simulation
 	 * @param measurmentErrorRatio the error ratio in measurements for
@@ -85,19 +80,17 @@ public class PhotonCameraSimulator extends PhotonCamera {
 	 * @param delayInSeconds the artificial delay to add in seconds
 	 */
 	public PhotonCameraSimulator(String cameraName, Transform3d robotToCamera,
-			DriveSimulator driveSimulator,
+			VisionSimulator visionSimulator,
 			double maxAngularErrorInDegrees,
 			double delayInSeconds) {
 		super(cameraName);
-		m_driveSimulator = driveSimulator;
+		m_visionSimulator = visionSimulator;
 		m_maxAngularError = maxAngularErrorInDegrees * Math.PI / 180;
 		m_DelayInSeconds = delayInSeconds;
 		m_cameraSim = new PhotonCameraSim(this);
 		m_cameraSim.enableProcessedStream(true);
 		m_cameraSim.enableDrawWireframe(true);
-		m_sim = new VisionSystemSim(cameraName);
-		m_sim.addAprilTags(kFieldLayout);
-		m_sim.addCamera(m_cameraSim, robotToCamera);
+		visionSimulator.addCamera(m_cameraSim, robotToCamera);
 		m_cameraPosePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/" + cameraName + "@Simulation", Pose3d.struct)
 				.publish();
@@ -155,9 +148,7 @@ public class PhotonCameraSimulator extends PhotonCamera {
 					m_unreadResults.remove();
 			}
 		}
-		var pose = m_driveSimulator.getSimulatedPose();
-		m_sim.update(pose);
-		m_cameraPosePublisher.set(m_sim.getCameraPose(m_cameraSim).get());
+		m_cameraPosePublisher.set(m_visionSimulator.getCameraPose(m_cameraSim).get());
 	}
 
 	/**

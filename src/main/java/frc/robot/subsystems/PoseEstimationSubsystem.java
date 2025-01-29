@@ -1,8 +1,8 @@
 package frc.robot.subsystems;
 
 import static frc.robot.Constants.*;
-import static frc.robot.Constants.RobotConstants.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -18,6 +18,7 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
@@ -33,9 +34,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
-	 * The {@code PhotonCamera}s used by this {@code PoseEstimationSubsystem}.
+	 * The {@code PhotonCamera}s and {@code PhotonPoseEstimator}s used by this
+	 * {@code PoseEstimationSubsystem}.
 	 */
-	private final PhotonCamera[] m_cameras;
+	private final Map<PhotonCamera, PhotonPoseEstimator> m_cameras = new HashMap<PhotonCamera, PhotonPoseEstimator>();
 
 	/**
 	 * The {@code PhotonCamera} used by this {@code PoseEstimationSubsystem}.
@@ -53,12 +55,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * the Kalman filter to more trust the measurements).
 	 */
 	private static final Vector<N3> visionMeasurementStdDevs = VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(10));
-
-	/**
-	 * The {@code PhotonPoseEstimator} used by this {@code PoseEstimationSubsystem}
-	 * to improve the accuracy when multiple tags are detected.
-	 */
-	private final PhotonPoseEstimator m_photonPoseEstimator;
 
 	/**
 	 * The {@code SwerveDrivePoseEstimator} used by this
@@ -84,14 +80,9 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * 
 	 * @param driveSubsystem {@code DriveSubsystem} to be used by the
 	 *        {@code PoseEstimationSubsystem}
-	 * @param cameras the {@code PhotonCamera}s to be used by the
-	 *        {@code PoseEstimationSubsystem} (found in the PhotonVision UI)
 	 */
-	public PoseEstimationSubsystem(DriveSubsystem driveSubsystem, PhotonCamera... cameras) {
-		m_cameras = cameras;
+	public PoseEstimationSubsystem(DriveSubsystem driveSubsystem) {
 		m_driveSubsystem = driveSubsystem;
-		m_photonPoseEstimator = new PhotonPoseEstimator(kFieldLayout,
-				PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, kRobotToCamera1);
 		m_poseEstimator = new SwerveDrivePoseEstimator(
 				driveSubsystem.kinematics(),
 				driveSubsystem.getHeading(),
@@ -108,19 +99,42 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Adds the specified {@code PhotonCamera} to this
+	 * {@code PoseEstimationSubsystem}.
+	 * 
+	 * @param cameraSim a {@code PhotonCamera}
+	 * @param robotToCamera the {@code Transform3d} expressing the pose of the
+	 *        camera relative to the pose of the robot.
+	 * @return this {@code PoseEstimationSubsystem}
+	 */
+	public PoseEstimationSubsystem addCamera(PhotonCamera camera, Transform3d robotToCamera) {
+		m_cameras.put(
+				camera, new PhotonPoseEstimator(kFieldLayout,
+						PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCamera));
+		return this;
+	}
+
+	/**
 	 * Is invoked periodically by the {@link CommandScheduler}.
 	 */
 	@Override
 	public void periodic() {
-		for (var c : m_cameras) // for every camera c
-			for (var r : c.getAllUnreadResults()) { // for every result r
-				Optional<EstimatedRobotPose> e = m_photonPoseEstimator.update(r); // assign estimated pose to e
-				if (e.isPresent()) { // if successful
-					EstimatedRobotPose v = e.get(); // get successfully estimated pose
-					m_poseEstimator.addVisionMeasurement(v.estimatedPose.toPose2d(), v.timestampSeconds);
-					m_detectedPosePublisher.set(v.estimatedPose.toPose2d());
+		boolean firstCamera = true;
+		for (var e : m_cameras.entrySet()) {
+			var camera = e.getKey();
+			var poseEstimator = e.getValue();
+			for (var r : camera.getAllUnreadResults()) { // for every result r
+				if (firstCamera || r.getTargets().size() > 1) {
+					Optional<EstimatedRobotPose> p = poseEstimator.update(r); // assign estimated pose to e
+					if (p.isPresent()) { // if successful
+						EstimatedRobotPose v = p.get(); // get successfully estimated pose
+						m_poseEstimator.addVisionMeasurement(v.estimatedPose.toPose2d(), v.timestampSeconds);
+						m_detectedPosePublisher.set(v.estimatedPose.toPose2d());
+					}
 				}
 			}
+			firstCamera = false;
+		}
 		m_poseEstimator.update(m_driveSubsystem.getHeading(), m_driveSubsystem.getModulePositions());
 		m_estimatedPosePublisher.set(m_poseEstimator.getEstimatedPosition());
 	}
