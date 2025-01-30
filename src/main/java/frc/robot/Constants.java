@@ -53,7 +53,8 @@ public class Constants {
 		public static final int kBackLeftCANCoderPort = 32;
 
 		// Make sure these are tuned (can do with SysId)
-		public static final double kP = 0.05;
+		// public static final double kP = 0.09;
+		public static final double kP = 0.03;
 		public static final double kI = 0.0;
 		public static final double kD = 0;
 		public static final double kS = 0;
@@ -67,12 +68,14 @@ public class Constants {
 
 		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
 		public static final double kTurnMaxAngularSpeed = Math.PI; // 1/2 rotation per second
+		public static final double kDriveMaxVoltage = 12;
 
-		public static final double kGearRatio = 6.12;
+		public static final double kDriveGearRatio = 6.12;
+		public static final double kSteerGearRatio = 150.0 / 7;
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
-		public static final double kMetersPerMotorRotation = kWheelCircumference / kGearRatio;
+		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
 		public static final Translation2d kFrontLeftLocation = new Translation2d(0.381, 0.381);

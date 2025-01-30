@@ -35,11 +35,6 @@ public class VisionSimulator extends SubsystemBase {
 	private final VisionSystemSim m_visionSimulator;
 
 	/**
-	 * The {@code Pose2d} of the robot in simulation.
-	 */
-	private Pose2d m_pose;
-
-	/**
 	 * The previous {@code Pose2d} of the robot from the {@code VisionSimulator}.
 	 */
 	private Pose2d m_previousOdometryPose = null;
@@ -73,7 +68,7 @@ public class VisionSimulator extends SubsystemBase {
 		m_driveSubsystem = driveSubsystem;
 		m_visionSimulator = new VisionSystemSim("Simulator");
 		m_visionSimulator.addAprilTags(kFieldLayout);
-		m_pose = initialPose;
+		m_visionSimulator.resetRobotPose(initialPose);
 		m_measurmentErrorRatio = measurmentErrorRatio;
 		m_posePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Pose@Simulation", Pose2d.struct)
@@ -86,15 +81,16 @@ public class VisionSimulator extends SubsystemBase {
 	@Override
 	public void periodic() {
 		var p = m_driveSubsystem.getPose();
+		var pose = m_visionSimulator.getRobotPose().toPose2d();
 		if (m_previousOdometryPose != null) {
 			var t = p.minus(m_previousOdometryPose);
 			t = new Transform2d(change(t.getX(), m_measurmentErrorRatio), change(t.getY(), m_measurmentErrorRatio),
 					Rotation2d.fromDegrees(change(t.getRotation().getDegrees(), m_measurmentErrorRatio)));
-			m_pose = m_pose.plus(t);
+			pose = pose.plus(t);
 		}
 		m_previousOdometryPose = p;
-		m_visionSimulator.update(m_pose);
-		m_posePublisher.set(m_pose);
+		m_visionSimulator.update(pose);
+		m_posePublisher.set(pose);
 	}
 
 	/**
@@ -103,7 +99,7 @@ public class VisionSimulator extends SubsystemBase {
 	 * @return the most recent simulated {@code Pose2d} of the robot on the field
 	 */
 	public Pose2d getSimulatedPose() {
-		return m_pose;
+		return m_visionSimulator.getRobotPose().toPose2d();
 	}
 
 	/**
