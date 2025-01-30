@@ -60,8 +60,10 @@ public class Constants {
 		public static final double kS = 0;
 		// public static final double kV = 0.11;
 		// public static final double kA = 0.009;
-		public static final double kV = 0.11 * 1 / 5;
-		public static final double kA = 0.0001;
+		public static final double kV = 0.11 * 1 / 2;
+		public static final double kA = 0.009 * 1 / 2;
+
+		// public static final double kA = 0.0001;
 
 		// public static final double kTeleopMaxVoltage = 12;
 		// public static final double kTeleopMaxTurnVoltage = 7.2;

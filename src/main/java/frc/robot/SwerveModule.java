@@ -96,7 +96,7 @@ public class SwerveModule {
 	 * @return The motor speed in voltage
 	 */
 	public double getDriveVoltage() {
-		return m_driveMotor.getAppliedOutput() * 32;
+		return m_driveMotor.getAppliedOutput() * kDriveMaxVoltage;
 	}
 
 	/**
@@ -163,18 +163,18 @@ public class SwerveModule {
 	 */
 	private void updateSim() {
 		if (RobotBase.isSimulation()) {
-			m_driveMotorSim.iterate(30, 32, 0.02);
-			m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * 12);
+			m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * kDriveMaxVoltage);
 			m_driveMotorModel.update(0.02);
+			m_driveMotorSim.iterate(m_driveMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, 0.02);
 			m_driveMotorSim.setPosition(m_driveMotorModel.getAngularPositionRotations());
 			m_driveMotorSim.setVelocity(m_driveMotorModel.getAngularVelocityRPM());
 
-			m_steerMotorSim.iterate(30, 32, 0.02);
-			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * 12);
+			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * kDriveMaxVoltage);
 			m_steerMotorModel.update(0.02);
+			m_steerMotorSim.iterate(m_steerMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, 0.02);
 			var encoderSimState = m_CANCoder.getSimState();
-			encoderSimState.setRawPosition(m_steerMotorModel.getAngularPositionRotations());
-			encoderSimState.setVelocity(m_steerMotorModel.getAngularVelocityRPM());
+			encoderSimState.setRawPosition(m_steerMotorModel.getAngularPositionRotations() / kSteerGearRatio);
+			encoderSimState.setVelocity(m_steerMotorModel.getAngularVelocityRPM() / kSteerGearRatio);
 		}
 	}
 
