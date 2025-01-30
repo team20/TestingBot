@@ -114,10 +114,11 @@ public class DriveCommand2 extends Command {
 		m_driveSubsystem = driveSubsystem;
 		m_poseSupplier = poseSupplier;
 		m_targetPoseSupplier = targetPoseSupplier;
-		var constraints = new TrapezoidProfile.Constraints(kDriveMaxVelocity, kDriveMaxAcceleration);
+		var constraints = new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration);
 		m_controllerXY = new ProfiledPIDController(kDriveP, kDriveI, kDriveD, constraints);
 		m_controllerYaw = new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
-				new TrapezoidProfile.Constraints(kTurnMaxVelocity, kTurnMaxAcceleration));
+				new TrapezoidProfile.Constraints(Math.toDegrees(kTurnMaxAngularSpeed),
+						Math.toDegrees(kTurnMaxAcceleration)));
 		m_controllerXY.setTolerance(distanceTolerance);
 		m_controllerYaw.setTolerance(angleTolerance);
 		m_controllerYaw.enableContinuousInput(-180, 180);

@@ -154,7 +154,7 @@ public class DriveSubsystem extends SubsystemBase {
 		// speeds --> target module states
 		SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(speeds);
 		// normalization
-		SwerveDriveKinematics.desaturateWheelSpeeds(states, kTeleopMaxVoltage);
+		SwerveDriveKinematics.desaturateWheelSpeeds(states, kDriveMaxSpeed);
 		// Get the current module angles
 		double[] moduleAngles = { m_frontLeft.getModuleAngle(), m_frontRight.getModuleAngle(),
 				m_backLeft.getModuleAngle(), m_backRight.getModuleAngle() };
@@ -189,7 +189,8 @@ public class DriveSubsystem extends SubsystemBase {
 	public void drive(double speedFwd, double speedSide, double speedRot, boolean isFieldRelative) {
 		if (RobotBase.isSimulation()) {
 			// TODO: Use SysId to get feedforward model for rotation
-			m_gyroSim.set(-speedRot * 20 * 0.02 + m_gyro.getYaw());
+			// m_gyroSim.set(-speedRot * 20 * 0.02 + m_gyro.getYaw());
+			m_gyroSim.set(-Math.toDegrees(speedRot) * 0.02 + m_gyro.getYaw());
 		}
 		setModuleStates(calculateModuleStates(new ChassisSpeeds(speedFwd, speedSide, speedRot), isFieldRelative));
 	}
@@ -225,14 +226,14 @@ public class DriveSubsystem extends SubsystemBase {
 		return run(() -> {
 			// Get the forward, strafe, and rotation speed, using a deadband on the joystick
 			// input so slight movements don't move the robot
-			double rotSpeed = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
-			rotSpeed = Math.signum(rotSpeed) * Math.pow(rotSpeed, 2) * kTeleopMaxTurnVoltage;
-
 			double fwdSpeed = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);
-			fwdSpeed = Math.signum(fwdSpeed) * Math.pow(fwdSpeed, 2) * kTeleopMaxVoltage;
+			fwdSpeed = Math.signum(fwdSpeed) * Math.pow(fwdSpeed, 2) * kDriveMaxSpeed;
 
 			double strSpeed = MathUtil.applyDeadband(strafeSpeed.getAsDouble(), ControllerConstants.kDeadzone);
-			strSpeed = Math.signum(strSpeed) * Math.pow(strSpeed, 2) * kTeleopMaxVoltage;
+			strSpeed = Math.signum(strSpeed) * Math.pow(strSpeed, 2) * kDriveMaxSpeed;
+
+			double rotSpeed = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
+			rotSpeed = Math.signum(rotSpeed) * Math.pow(rotSpeed, 2) * kTurnMaxAngularSpeed;
 
 			drive(fwdSpeed, strSpeed, rotSpeed, isFieldRelative.getAsBoolean());
 		}).withName("DefaultDriveCommand");

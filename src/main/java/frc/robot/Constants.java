@@ -62,8 +62,12 @@ public class Constants {
 		public static final double kV = 0.11 * 1 / 5;
 		public static final double kA = 0.0001;
 
-		public static final double kTeleopMaxVoltage = 12;
-		public static final double kTeleopMaxTurnVoltage = 7.2;
+		// public static final double kTeleopMaxVoltage = 12;
+		// public static final double kTeleopMaxTurnVoltage = 7.2;
+
+		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
+		public static final double kTurnMaxAngularSpeed = Math.PI; // 1/2 rotation per second
+
 		public static final double kGearRatio = 6.12;
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
@@ -88,15 +92,13 @@ public class Constants {
 		// public static final double kDriveP = 0.4; // up to 1.0?
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		public static final double kDriveMaxVelocity = 3; // up to 5?
-		public static final double kDriveMaxAcceleration = 6; // up to 10?
+		public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; // kDriveMaxSpeed in 1/2 sec
 
 		public static final double kTurnP = 0.2; // was 0.005 upto 0.2?
 		// public static final double kTurnP = 0.02; // was 0.005 upto 0.2?
 		public static final double kTurnI = 0; // was 0.003
 		public static final double kTurnD = 0; // 0.0
-		public static final double kTurnMaxVelocity = 120; // up to 240?
-		public static final double kTurnMaxAcceleration = 240; // up to 360?
+		public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1/2 sec
 
 	}
 
