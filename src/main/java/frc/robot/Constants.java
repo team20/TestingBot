@@ -77,7 +77,9 @@ public class Constants {
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
-		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio;
+		// TODO adjust kDriveGearRatio or kWheelDiameter so that we can remove 0.93 in
+		// the following
+		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio * 0.93;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
 		public static final Translation2d kFrontLeftLocation = new Translation2d(0.381, 0.381);
