@@ -23,9 +23,10 @@ public class Robot extends TimedRobot {
 	public Robot() {
 		m_composer = new CommandComposer(m_driveSubsystem);
 
-		m_autoChooser.addRoutine("LeaveRoutine", m_composer::leave);
-		m_autoChooser.addRoutine("RoundTripRoutine", m_composer::roundTrip);
-		m_autoChooser.addRoutine("MiddleBallRoutine", m_composer::middleBall);
+		m_autoChooser.addRoutine("Blue Leave 1", m_composer::blue1Leave);
+		m_autoChooser.addRoutine("Blue Leave 5", m_composer::blue5Leave);
+		m_autoChooser.addRoutine("Red Leave 1", m_composer::red1Leave);
+		m_autoChooser.addRoutine("Red Leave 5", m_composer::red5Leave);
 		m_autoChooser.addCmd("ZigZag", m_composer.zigZag(0.3, 5));
 		m_autoChooser.addCmd("InverseZigZag", m_composer.zigZag(-0.3, 5));
 		SmartDashboard.putData("Autos", m_autoChooser);

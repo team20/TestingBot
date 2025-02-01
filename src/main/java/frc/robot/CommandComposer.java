@@ -25,45 +25,55 @@ public class CommandComposer {
 				m_driveSubsystem);
 	}
 
-	public AutoRoutine leave() {
-		AutoRoutine routine = m_factory.newRoutine("LeaveRoutine");
+	// LEAVE AUTOS:
 
-		AutoTrajectory trajectory = routine.trajectory("Leave");
-
+	public AutoRoutine blue1Leave() {
+		AutoRoutine routine = m_factory.newRoutine("Blue Leave 1");
+		AutoTrajectory trajectory = routine.trajectory("LeaveB1");
 		routine.active().onTrue(
 				sequence(
 						trajectory.resetOdometry(),
-						print("Leaving"),
+						print("Leaving B1"),
 						trajectory.cmd()));
-
 		return routine;
 	}
 
-	public AutoRoutine roundTrip() {
-		AutoRoutine routine = m_factory.newRoutine("RoundTripRoutine");
-
-		AutoTrajectory trajectory = routine.trajectory("Round Trip");
-
+	public AutoRoutine blue5Leave() {
+		AutoRoutine routine = m_factory.newRoutine("Blue Leave 5");
+		AutoTrajectory trajectory = routine.trajectory("LeaveB5");
 		routine.active().onTrue(
 				sequence(
 						trajectory.resetOdometry(),
+						print("Leaving B5"),
 						trajectory.cmd()));
-
 		return routine;
 	}
 
-	public AutoRoutine middleBall() {
-		AutoRoutine routine = m_factory.newRoutine("MiddleBallRoutine");
-
-		AutoTrajectory trajectory = routine.trajectory("Middle Ball");
-
+	public AutoRoutine red1Leave() {
+		AutoRoutine routine = m_factory.newRoutine("Red Leave 1");
+		AutoTrajectory trajectory = routine.trajectory("LeaveR1");
 		routine.active().onTrue(
 				sequence(
 						trajectory.resetOdometry(),
+						print("Leaving R1"),
 						trajectory.cmd()));
-
 		return routine;
 	}
+
+	public AutoRoutine red5Leave() {
+		AutoRoutine routine = m_factory.newRoutine("Red Leave 1");
+		AutoTrajectory trajectory = routine.trajectory("LeaveR1");
+		routine.active().onTrue(
+				sequence(
+						trajectory.resetOdometry(),
+						print("Leaving R1"),
+						trajectory.cmd()));
+		return routine;
+	}
+
+	// REEF SCORE AUTOS
+
+	// TESTING AUTOS:
 
 	public Supplier<Command> zigZag(double dist, int times) {
 		return () -> {
