@@ -158,7 +158,7 @@ public class DriveCommand2 extends Command {
 		Pose2d pose = m_poseSupplier.get();
 		Translation2d t = m_targetPose.getTranslation().minus(pose.getTranslation());
 		double speed = m_controllerXY.calculate(t.getNorm());
-		t = t.times(-speed / t.getNorm()); // translation toward target
+		t = t.getNorm() > 0 ? t.times(-speed / t.getNorm()) : t; // translation toward target
 		double speedX = t.getX();
 		double speedY = t.getY();
 		// NEGATION needed if the robot rotates clockwise given positive turnSpeed
