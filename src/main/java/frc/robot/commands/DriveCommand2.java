@@ -8,14 +8,14 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
- * This {@code DriveCommand2} aims to maneuver the robot from its current pose
- * to
- * a certain target pose.
+ * This {@code DriveCommand2} aims to maneuver the robot to a certain
+ * {@code Pose2d}.
  * It utilizes two {@code ProfiledPIDController}s to precisely control the
  * robot in the x, y, and yaw dimensions.
  * 
@@ -35,7 +35,7 @@ public class DriveCommand2 extends Command {
 	private Supplier<Pose2d> m_poseSupplier;
 
 	/**
-	 * The {@code Supplier<Pose2d>} that calculates the target pose to which the
+	 * The {@code Supplier<Pose2d>} that provides the {@code Pose2d} to which the
 	 * robot should move.
 	 * This is used at the commencement of this {@code DriveCommand2} (i.e.,
 	 * when the scheduler begins to periodically execute this {@code
@@ -55,14 +55,17 @@ public class DriveCommand2 extends Command {
 	 */
 	private ProfiledPIDController m_controllerYaw;
 
+	/**
+	 * The {@code Pose2d} to which the robot should move.
+	 */
 	private Pose2d m_targetPose;
 
 	/**
 	 * Constructs a new {@code DriveCommand2} whose purpose is to move the
-	 * robot to a certain target pose.
+	 * robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
-	 * @param targetPose the target pose to which the robot needs to move
+	 * @param targetPose the {@code Pose2d} to which the robot needs to move
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 */
@@ -93,13 +96,13 @@ public class DriveCommand2 extends Command {
 
 	/**
 	 * Constructs a new {@code DriveCommand2} whose purpose is to move the
-	 * robot to a certain target pose.
+	 * robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
 	 * @param poseSupplier the {@code Supplier} providing the current {@code Pose2d}
 	 *        of the robot
 	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
-	 *        target pose to which the robot should move.
+	 *        {@code Pose2d} to which the robot should move.
 	 *        This is used at the commencement of this
 	 *        {@code DriveCommand2} (i.e., when the scheduler
 	 *        begins to periodically execute this
@@ -137,8 +140,9 @@ public class DriveCommand2 extends Command {
 		try {
 			m_targetPose = m_targetPoseSupplier.get();
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		var t = m_targetPose.getTranslation().minus(pose.getTranslation());
+		Translation2d t = m_targetPose.getTranslation().minus(pose.getTranslation());
 		m_controllerXY.reset(t.getNorm());
 		m_controllerYaw.reset(pose.getRotation().getDegrees());
 		m_controllerXY.setGoal(0);
@@ -152,9 +156,9 @@ public class DriveCommand2 extends Command {
 	@Override
 	public void execute() {
 		Pose2d pose = m_poseSupplier.get();
-		var t = m_targetPose.getTranslation().minus(pose.getTranslation());
+		Translation2d t = m_targetPose.getTranslation().minus(pose.getTranslation());
 		double speed = m_controllerXY.calculate(t.getNorm());
-		t = t.times(-speed / t.getNorm());
+		t = t.times(-speed / t.getNorm()); // translation toward target
 		double speedX = t.getX();
 		double speedY = t.getY();
 		// NEGATION needed if the robot rotates clockwise given positive turnSpeed

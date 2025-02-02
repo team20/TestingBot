@@ -10,6 +10,7 @@ import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.littletonrobotics.urcl.URCL;
@@ -88,41 +89,49 @@ public class Robot extends TimedRobot {
 								DriveCommand.moveForward(m_driveSubsystem, 1.8, distanceTolerance, angleTolerance),
 								DriveCommand.moveForward(m_driveSubsystem, -1.8, distanceTolerance, angleTolerance)));
 
+		Transform2d robotToTarget = new Transform2d(1, 0, Rotation2d.fromDegrees(180));
+		m_driverController.button(Button.kTriangle)
+				.whileTrue(
+						AlignCommand.moveTo(
+								m_driveSubsystem, m_poseEstimationSubystem,
+								kFieldLayout.getTagPose(17).get().toPose2d().plus(robotToTarget),
+								distanceTolerance, angleTolerance));
+
 		double angleOfCoverageInDegrees = 90;
 		double distanceThresholdInMeters = 4;
-		m_driverController.button(Button.kTriangle)
+		m_driverController.button(Button.kLeftBumper)
 				.whileTrue(
 						AlignCommand.turnToClosestTag(
 								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
 								distanceThresholdInMeters,
 								distanceTolerance, angleTolerance));
 
-		Transform2d robotToTarget = new Transform2d(1.5, 0, Rotation2d.fromDegrees(180));
-		m_driverController.button(Button.kLeftBumper)
+		m_driverController.button(Button.kRightBumper)
 				.whileTrue(
 						AlignCommand.moveToClosestTag(
 								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
 								distanceThresholdInMeters, robotToTarget,
 								distanceTolerance, angleTolerance));
 
-		m_driverController.button(Button.kRightBumper)
+		m_driverController.button(Button.kLeftTrigger)
 				.whileTrue(
 						tourCommand(
 								m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance, angleTolerance,
-								robotToTarget, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24));
-
+								robotToTarget, 12, 15, 14, 16, 17, 18, 19, 20, 21, 22));
 	}
 
 	Command tourCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubystem,
 			double distanceTolerance, double angleTolerance, Transform2d robotToTarget, int... tagIDs) {
-		var s = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i)).filter(p -> p.isPresent())
+		List<Command> commands = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
+				.filter(p -> p.isPresent())
 				.map(p -> p.get())
 				.map(p -> p.toPose2d().plus(robotToTarget)).map(
 						p -> AlignCommand
 								.moveTo(
 										driveSubsystem, poseEstimationSubystem, p, distanceTolerance,
-										angleTolerance));
-		return sequence(s.toList().toArray(new Command[0]));
+										angleTolerance))
+				.toList();
+		return sequence(commands.toArray(new Command[0]));
 	}
 
 	@Override
