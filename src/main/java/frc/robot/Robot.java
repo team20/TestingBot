@@ -16,6 +16,7 @@ import java.util.Map;
 import org.littletonrobotics.urcl.URCL;
 import org.photonvision.PhotonCamera;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -74,8 +75,8 @@ public class Robot extends TimedRobot {
 						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
 						m_driverController.getHID()::getSquareButton));
 
-		double distanceTolerance = 0.05;
-		double angleTolerance = 5;
+		double distanceTolerance = 0.03;
+		double angleTolerance = 3;
 		m_driverController.button(Button.kSquare) // home
 				.whileTrue(
 						new DriveCommand(
@@ -90,34 +91,44 @@ public class Robot extends TimedRobot {
 								DriveCommand.moveForward(m_driveSubsystem, -1.8, distanceTolerance, angleTolerance)));
 
 		Transform2d robotToTarget = new Transform2d(1, 0, Rotation2d.fromDegrees(180));
-		m_driverController.button(Button.kTriangle)
-				.whileTrue(
-						AlignCommand.moveTo(
-								m_driveSubsystem, m_poseEstimationSubystem,
-								kFieldLayout.getTagPose(17).get().toPose2d().plus(robotToTarget),
-								distanceTolerance, angleTolerance));
-
 		double angleOfCoverageInDegrees = 90;
 		double distanceThresholdInMeters = 4;
-		m_driverController.button(Button.kLeftBumper)
+		m_driverController.button(Button.kTriangle)
 				.whileTrue(
-						AlignCommand.turnToClosestTag(
-								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
-								distanceThresholdInMeters,
-								distanceTolerance, angleTolerance));
+						alignTest(1, robotToTarget, distanceTolerance, angleTolerance));
+		// m_driverController.button(Button.kTriangle)
+		// .whileTrue(
+		// AlignCommand.turnToClosestTag(
+		// m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
+		// distanceThresholdInMeters,
+		// distanceTolerance, angleTolerance));
 
-		m_driverController.button(Button.kRightBumper)
+		m_driverController.button(Button.kLeftBumper)
 				.whileTrue(
 						AlignCommand.moveToClosestTag(
 								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
 								distanceThresholdInMeters, robotToTarget,
 								distanceTolerance, angleTolerance));
 
-		m_driverController.button(Button.kLeftTrigger)
+		m_driverController.button(Button.kRightBumper)
 				.whileTrue(
 						tourCommand(
-								m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance, angleTolerance,
+								m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance,
+								angleTolerance,
 								robotToTarget, 12, 15, 14, 16, 17, 18, 19, 20, 21, 22));
+	}
+
+	private Command alignTest(int tagIDs, Transform2d robotToTarget, double distanceTolerance, double angleTolerance) {
+		return sequence(
+				AlignCommand.moveTo(
+						m_driveSubsystem, m_poseEstimationSubystem,
+						kFieldLayout.getTagPose(1).get().toPose2d().plus(robotToTarget),
+						distanceTolerance, angleTolerance),
+				AlignCommand.moveTo(
+						m_driveSubsystem, m_poseEstimationSubystem,
+						() -> m_poseEstimationSubystem.getEstimatedPose()
+								.plus(pose(-2, 0, 0).minus(Pose2d.kZero)),
+						distanceTolerance, angleTolerance));
 	}
 
 	Command tourCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubystem,

@@ -56,7 +56,8 @@ public class Constants {
 		// public static final double kP = 0.09;
 		public static final double kP = 0.03;
 		public static final double kI = 0.0;
-		public static final double kD = 0;
+		public static final double kD = kP * 0.05;
+		// public static final double kD = 0;
 		public static final double kS = 0;
 		// public static final double kV = 0.11;
 		// public static final double kA = 0.009;
@@ -68,7 +69,8 @@ public class Constants {
 		// public static final double kTeleopMaxVoltage = 12;
 		// public static final double kTeleopMaxTurnVoltage = 7.2;
 
-		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
+		// public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
+		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
 		public static final double kTurnMaxAngularSpeed = Math.PI; // 1/2 rotation per second
 		public static final double kDriveMaxVoltage = 12;
 
@@ -95,11 +97,13 @@ public class Constants {
 		public static final double kRampRate = .1;
 
 		// DriveCommand.java Constants
-		public static final double kDriveP = 4; // up to 1.0?
+		public static final double kDriveP = 6; // up to 1.0?
 		// public static final double kDriveP = 0.4; // up to 1.0?
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; // kDriveMaxSpeed in 1/2 sec
+		// public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; //
+		// kDriveMaxSpeed in 1/2 sec
+		public static final double kDriveMaxAcceleration = 1 * kDriveMaxSpeed; // kDriveMaxSpeed in 1 sec
 
 		public static final double kTurnP = 0.2; // was 0.005 upto 0.2?
 		// public static final double kTurnP = 0.02; // was 0.005 upto 0.2?
@@ -120,7 +124,7 @@ public class Constants {
 		 * The {@code Transform3d} expressing the pose of the first camera relative to
 		 * the pose of the robot.
 		 */
-		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.0, -0.1, 0.2),
+		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.0, 0.0, 0.2),
 				new Rotation3d(0, Units.degreesToRadians(-20), 0));
 
 		/**
