@@ -22,6 +22,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /**
@@ -173,14 +174,16 @@ public class SwerveModule {
 	private void updateSim() {
 		if (RobotBase.isSimulation()) {
 			m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * kDriveMaxVoltage);
-			m_driveMotorModel.update(0.02);
-			m_driveMotorSim.iterate(m_driveMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, 0.02);
+			m_driveMotorModel.update(TimedRobot.kDefaultPeriod);
+			m_driveMotorSim
+					.iterate(m_driveMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, TimedRobot.kDefaultPeriod);
 			m_driveMotorSim.setPosition(m_driveMotorModel.getAngularPositionRotations());
 			m_driveMotorSim.setVelocity(m_driveMotorModel.getAngularVelocityRPM());
 
 			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * kDriveMaxVoltage);
-			m_steerMotorModel.update(0.02);
-			m_steerMotorSim.iterate(m_steerMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, 0.02);
+			m_steerMotorModel.update(TimedRobot.kDefaultPeriod);
+			m_steerMotorSim
+					.iterate(m_steerMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, TimedRobot.kDefaultPeriod);
 			var encoderSimState = m_CANCoder.getSimState();
 			encoderSimState.setRawPosition(m_steerMotorModel.getAngularPositionRotations() / kSteerGearRatio);
 			encoderSimState.setVelocity(m_steerMotorModel.getAngularVelocityRPM() / kSteerGearRatio);

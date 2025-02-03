@@ -15,7 +15,7 @@
           ]
         },
         "tabs": {
-          "selected": 5,
+          "selected": 6,
           "tabs": [
             {
               "type": 0,
@@ -73,6 +73,41 @@
                 "sources": [
                   {
                     "type": "robot",
+                    "logKey": "NT:/SmartDashboard/Pose@PoseEstimationSubsystem",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "model": "Banana Split"
+                    }
+                  }
+                ],
+                "game": "2025 Field",
+                "origin": "blue"
+              },
+              "controllerUUID": "v572ls6ddll0y9doq2g14vf4re5gz6ya",
+              "renderer": {
+                "cameraIndex": -8,
+                "orbitFov": 50,
+                "cameraPosition": [
+                  -10.28116,
+                  1.5748000000000002,
+                  -1.88861845282827e-15
+                ],
+                "cameraTarget": [
+                  0,
+                  0.5,
+                  0
+                ]
+              },
+              "controlsHeight": 200
+            },
+            {
+              "type": 3,
+              "title": "3D Field",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
                     "logKey": "NT:/SmartDashboard/Pose@Simulation",
                     "logType": "Pose2d",
                     "visible": true,
@@ -108,7 +143,7 @@
                 "sources": [
                   {
                     "type": "robot",
-                    "logKey": "NT:/SmartDashboard/CameraPose@Simulation",
+                    "logKey": "NT:/SmartDashboard/Camera1@Simulation",
                     "logType": "Pose3d",
                     "visible": true,
                     "options": {
@@ -124,14 +159,14 @@
                 "cameraIndex": 0,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  -2.6630159026513405,
-                  0.7895533605569398,
-                  3.267542446630163
+                  -7.032388995172622,
+                  0.7531807386895286,
+                  -2.104014523955471
                 ],
                 "cameraTarget": [
-                  -2.6474263986172284,
-                  1.131573503882609,
-                  4.2071057435524395
+                  -7.652531573609186,
+                  0.9268289163564587,
+                  -2.8690436036661735
                 ]
               },
               "controlsHeight": 200

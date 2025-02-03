@@ -26,6 +26,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -189,8 +190,7 @@ public class DriveSubsystem extends SubsystemBase {
 	public void drive(double speedFwd, double speedSide, double speedRot, boolean isFieldRelative) {
 		if (RobotBase.isSimulation()) {
 			// TODO: Use SysId to get feedforward model for rotation
-			// m_gyroSim.set(-speedRot * 20 * 0.02 + m_gyro.getYaw());
-			m_gyroSim.set(-Math.toDegrees(speedRot) * 0.02 + m_gyro.getYaw());
+			m_gyroSim.set(-Math.toDegrees(speedRot) * TimedRobot.kDefaultPeriod + m_gyro.getYaw());
 		}
 		setModuleStates(calculateModuleStates(new ChassisSpeeds(speedFwd, speedSide, speedRot), isFieldRelative));
 	}

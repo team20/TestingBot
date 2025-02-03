@@ -43,7 +43,8 @@ public class Robot extends TimedRobot {
 	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
-	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem, pose(1, 1, 0), 0.01);
+	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
+			pose(kFieldLayout.getFieldLength() / 2, 1.91, 0), 0.01);
 	private final PhotonCamera m_camera1 = RobotBase.isSimulation()
 			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_visionSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera");
