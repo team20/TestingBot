@@ -90,18 +90,19 @@ public class Robot extends TimedRobot {
 								DriveCommand.moveForward(m_driveSubsystem, 1.8, distanceTolerance, angleTolerance),
 								DriveCommand.moveForward(m_driveSubsystem, -1.8, distanceTolerance, angleTolerance)));
 
-		Transform2d robotToTarget = new Transform2d(1, 0, Rotation2d.fromDegrees(180));
+		Transform2d robotToTarget = new Transform2d(1.8, 0, Rotation2d.fromDegrees(180));
 		double angleOfCoverageInDegrees = 90;
 		double distanceThresholdInMeters = 4;
-		m_driverController.button(Button.kTriangle)
-				.whileTrue(
-						alignTest(1, robotToTarget, distanceTolerance, angleTolerance));
 		// m_driverController.button(Button.kTriangle)
 		// .whileTrue(
-		// AlignCommand.turnToClosestTag(
-		// m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
-		// distanceThresholdInMeters,
-		// distanceTolerance, angleTolerance));
+		// alignTest(1, robotToTarget, distanceTolerance, angleTolerance));
+
+		m_driverController.button(Button.kTriangle)
+				.whileTrue(
+						AlignCommand.turnToClosestTag(
+								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
+								distanceThresholdInMeters,
+								distanceTolerance, angleTolerance));
 
 		m_driverController.button(Button.kLeftBumper)
 				.whileTrue(
@@ -109,20 +110,25 @@ public class Robot extends TimedRobot {
 								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
 								distanceThresholdInMeters, robotToTarget,
 								distanceTolerance, angleTolerance));
-
 		m_driverController.button(Button.kRightBumper)
 				.whileTrue(
 						tourCommand(
 								m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance,
 								angleTolerance,
-								robotToTarget, 12, 15, 14, 16, 17, 18, 19, 20, 21, 22));
+								robotToTarget, 1, 6, 7, 8, 2, 8, 7, 6, 1));
+		// m_driverController.button(Button.kRightBumper)
+		// .whileTrue(
+		// tourCommand(
+		// m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance,
+		// angleTolerance,
+		// robotToTarget, 12, 15, 14, 16, 17, 18, 19, 20, 21, 22));
 	}
 
-	private Command alignTest(int tagIDs, Transform2d robotToTarget, double distanceTolerance, double angleTolerance) {
+	Command alignTest(int tagID, Transform2d robotToTarget, double distanceTolerance, double angleTolerance) {
 		return sequence(
 				AlignCommand.moveTo(
 						m_driveSubsystem, m_poseEstimationSubystem,
-						kFieldLayout.getTagPose(1).get().toPose2d().plus(robotToTarget),
+						kFieldLayout.getTagPose(tagID).get().toPose2d().plus(robotToTarget),
 						distanceTolerance, angleTolerance),
 				AlignCommand.moveTo(
 						m_driveSubsystem, m_poseEstimationSubystem,

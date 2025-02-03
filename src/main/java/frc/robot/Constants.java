@@ -91,14 +91,15 @@ public class Constants {
 
 		public static final int kEncoderDepth = 4;
 		public static final int kEncoderMeasurementPeriod = 16;
-		public static final int kSteerSmartCurrentLimit = 60;
+		public static final int kDriveSmartCurrentLimit = 60; // TODO: find a good value
+		public static final int kDrivePeakCurrentLimit = kDriveSmartCurrentLimit + 15;
+		public static final int kSteerSmartCurrentLimit = 60; // TODO: find a good value
 		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;
 
 		// DriveCommand.java Constants
-		public static final double kDriveP = 6; // up to 1.0?
-		// public static final double kDriveP = 0.4; // up to 1.0?
+		public static final double kDriveP = 5; // TODO: find a good value
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
 		// public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; //
@@ -125,7 +126,7 @@ public class Constants {
 		 * the pose of the robot.
 		 */
 		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.0, 0.0, 0.2),
-				new Rotation3d(0, Units.degreesToRadians(-20), 0));
+				new Rotation3d(0, Units.degreesToRadians(-10), 0));
 
 		/**
 		 * The {@code Transform3d} expressing the pose of the second camera relative to

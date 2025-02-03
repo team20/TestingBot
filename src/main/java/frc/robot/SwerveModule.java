@@ -49,8 +49,17 @@ public class SwerveModule {
 		config.openLoopRampRate(kRampRate).closedLoopRampRate(kRampRate);
 		// Helps with encoder precision (not set in stone)
 		config.encoder.uvwAverageDepth(kEncoderDepth).uvwMeasurementPeriod(kEncoderMeasurementPeriod);
+		config.smartCurrentLimit(kDriveSmartCurrentLimit).secondaryCurrentLimit(kDrivePeakCurrentLimit);
+		m_driveMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+		config = new SparkMaxConfig();
+		config.idleMode(IdleMode.kBrake).voltageCompensation(12);
+		config.openLoopRampRate(kRampRate).closedLoopRampRate(kRampRate);
+		// Helps with encoder precision (not set in stone)
+		config.encoder.uvwAverageDepth(kEncoderDepth).uvwMeasurementPeriod(kEncoderMeasurementPeriod);
 		config.smartCurrentLimit(kSteerSmartCurrentLimit).secondaryCurrentLimit(kSteerPeakCurrentLimit);
 		m_steerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
 		m_steerController.enableContinuousInput(0, 360);
 		if (RobotBase.isSimulation()) {
 			m_driveMotorModel = new DCMotorSim(
