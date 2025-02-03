@@ -32,6 +32,7 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.ControllerConstants.Button;
 import frc.robot.commands.AlignCommand;
 import frc.robot.commands.DriveCommand;
+import frc.robot.commands.DriveCommand2;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -206,7 +207,9 @@ public class Robot extends TimedRobot {
 		CommandScheduler.getInstance().cancelAll();
 		sequence(
 				m_driveSubsystem.testCommand(), // F, B, SL, SR, RL, RR
-				DriveCommand.testCommand(m_driveSubsystem)).schedule();
+				DriveCommand.testCommand(m_driveSubsystem),
+				DriveCommand2.testCommand(m_driveSubsystem))
+						.schedule();
 	}
 
 	@Override

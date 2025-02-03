@@ -161,8 +161,8 @@ public class DriveCommand extends Command {
 		double speedY = m_controllerY.calculate(pose.getY());
 		// NEGATION needed if the robot rotates clockwise given positive turnSpeed
 		double speedYaw = m_controllerYaw.calculate(pose.getRotation().getDegrees());
-		// speedX = applyThreshold(speedX, DriveConstants.kMinSpeed);
-		// speedY = applyThreshold(speedY, DriveConstants.kMinSpeed);
+		speedX = applyThreshold(speedX, kDriveMinSpeed);
+		speedY = applyThreshold(speedY, kDriveMinSpeed);
 		m_driveSubsystem.drive(speedX, speedY, speedYaw, true);
 	}
 
@@ -209,7 +209,7 @@ public class DriveCommand extends Command {
 	 *         implementation
 	 */
 	public static Command testCommand(DriveSubsystem driveSubsystem) {
-		return new DriveCommand(driveSubsystem, new Pose2d(.3, .3, Rotation2d.fromDegrees(90)), .1, 3)
+		return new DriveCommand(driveSubsystem, new Pose2d(.5, .5, Rotation2d.fromDegrees(90)), .1, 3)
 				.andThen(new DriveCommand(driveSubsystem, Pose2d.kZero, .1, 3));
 	}
 }
