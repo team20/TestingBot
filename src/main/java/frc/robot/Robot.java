@@ -10,6 +10,7 @@ import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -112,12 +113,21 @@ public class Robot extends TimedRobot {
 								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
 								distanceThresholdInMeters, robotToTarget,
 								distanceTolerance, angleTolerance));
+
 		m_driverController.button(Button.kRightBumper)
 				.whileTrue(
-						tourCommand(
+						tourCommandOptimized(
 								m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance,
 								angleTolerance,
 								robotToTarget, 1, 6, 7, 8, 2, 8, 7, 6, 1));
+
+		// m_driverController.button(Button.kRightBumper)
+		// .whileTrue(
+		// tourCommand(
+		// m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance,
+		// angleTolerance,
+		// robotToTarget, 1, 6, 7, 8, 2, 8, 7, 6, 1));
+
 		// m_driverController.button(Button.kRightBumper)
 		// .whileTrue(
 		// tourCommand(
@@ -141,7 +151,7 @@ public class Robot extends TimedRobot {
 
 	Command tourCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubystem,
 			double distanceTolerance, double angleTolerance, Transform2d robotToTarget, int... tagIDs) {
-		List<Command> commands = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
+		List<DriveCommand2> commands = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
 				.filter(p -> p.isPresent())
 				.map(p -> p.get())
 				.map(p -> p.toPose2d().plus(robotToTarget)).map(
@@ -150,6 +160,28 @@ public class Robot extends TimedRobot {
 										driveSubsystem, poseEstimationSubystem, p, distanceTolerance,
 										angleTolerance))
 				.toList();
+		return sequence(commands.toArray(new Command[0]));
+	}
+
+	Command tourCommandOptimized(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubystem,
+			double distanceTolerance, double angleTolerance, Transform2d robotToTarget, int... tagIDs) {
+		var l = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
+				.filter(p -> p.isPresent())
+				.map(p -> p.get())
+				.map(p -> p.toPose2d().plus(robotToTarget)).toList();
+		List<Command> commands = new LinkedList<Command>();
+		DriveCommand2 previous = null;
+		for (var p : l) {
+			boolean last = p == l.get(l.size() - 1);
+			DriveCommand2 c = previous == null ? AlignCommand.moveTo(
+					driveSubsystem, poseEstimationSubystem, p, last ? distanceTolerance : 3 * distanceTolerance,
+					last ? angleTolerance : 3 * angleTolerance)
+					: AlignCommand.moveTo(
+							driveSubsystem, poseEstimationSubystem, p, last ? distanceTolerance : 3 * distanceTolerance,
+							last ? angleTolerance : 3 * angleTolerance, previous);
+			commands.add(c);
+			previous = c;
+		}
 		return sequence(commands.toArray(new Command[0]));
 	}
 

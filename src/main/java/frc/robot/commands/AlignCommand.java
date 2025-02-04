@@ -34,7 +34,8 @@ public class AlignCommand {
 	 * @return a new {@code Command} whose purpose is to move the
 	 *         robot to a certain target pose
 	 */
-	public static Command driveCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
+	public static DriveCommand2 driveCommand(DriveSubsystem driveSubsystem,
+			PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance) {
@@ -71,6 +72,37 @@ public class AlignCommand {
 	}
 
 	/**
+	 * Constructs a new {@code Command} whose purpose is to move the
+	 * robot to a certain target pose.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        field-centric {@code Pose2d} to which the robot should move.
+	 *        This is used at the commencement of this
+	 *        {@code Command} (i.e., when the scheduler
+	 *        begins to periodically execute this
+	 *        {@code Command})
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param previous the {@code DriveCommand2} right before the new
+	 *        {@code Command}
+	 * @return a new {@code Command} whose purpose is to move the
+	 *         robot to a certain target pose
+	 */
+	public static DriveCommand2 driveCommand(DriveSubsystem driveSubsystem,
+			PoseEstimationSubsystem poseEstimationSubsystem,
+			Supplier<Pose2d> targetPoseSupplier,
+			double distanceTolerance,
+			double angleTolerance, DriveCommand2 previous) {
+		return new DriveCommand2Optimized(driveSubsystem, () -> driveSubsystem.getPose(),
+				() -> {
+					Transform2d t = targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
+					return driveSubsystem.getPose().plus(t); // odometry-centric pose of target
+				}, distanceTolerance, angleTolerance, previous);
+	}
+
+	/**
 	 * Constructs a {@code Command} for moving the robot to the specified
 	 * target.
 	 * 
@@ -82,10 +114,31 @@ public class AlignCommand {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static Command moveTo(DriveSubsystem driveSubsystem,
+	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Pose2d targetPose, double distanceTolerance, double angleTolerance) {
 		return moveTo(driveSubsystem, poseEstimationSubsystem, () -> targetPose, distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code Command} for moving the robot to the specified
+	 * target.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPose the field-centric {@code Pose2d} of the target
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param previous the {@code DriveCommand2} right before the new
+	 *        {@code Command}
+	 * @return a {@code Commmand} for moving the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
+			PoseEstimationSubsystem poseEstimationSubsystem,
+			Pose2d targetPose, double distanceTolerance, double angleTolerance, DriveCommand2 previous) {
+		return moveTo(
+				driveSubsystem, poseEstimationSubsystem, () -> targetPose, distanceTolerance, angleTolerance, previous);
 	}
 
 	/**
@@ -104,12 +157,39 @@ public class AlignCommand {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static Command moveTo(DriveSubsystem driveSubsystem,
+	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance) {
 		return driveCommand(
 				driveSubsystem, poseEstimationSubsystem, targetPoseSupplier,
 				distanceTolerance, angleTolerance);
+	}
+
+	/**
+	 * Constructs a {@code Command} for moving the robot to the specified
+	 * target.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        field-centric {@code Pose2d} of the target.
+	 *        This is used at the commencement of the {@code Command} (i.e.,
+	 *        when the scheduler begins to periodically execute the
+	 *        {@code Command})
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param previous the {@code DriveCommand2} right before the new
+	 *        {@code Command}
+	 * @return a {@code Commmand} for moving the robot to the specified
+	 *         target
+	 */
+	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
+			PoseEstimationSubsystem poseEstimationSubsystem,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance,
+			DriveCommand2 previous) {
+		return driveCommand(
+				driveSubsystem, poseEstimationSubsystem, targetPoseSupplier,
+				distanceTolerance, angleTolerance, previous);
 	}
 
 	/**

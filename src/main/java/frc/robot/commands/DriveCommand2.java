@@ -27,12 +27,12 @@ public class DriveCommand2 extends Command {
 	/**
 	 * The {@code DriveSubsystem} used by this {@code DriveCommand2}.
 	 */
-	private DriveSubsystem m_driveSubsystem;
+	protected DriveSubsystem m_driveSubsystem;
 
 	/**
 	 * The {@code Supplier} providing the current {@code Pose2d} of the robot.
 	 */
-	private Supplier<Pose2d> m_poseSupplier;
+	protected Supplier<Pose2d> m_poseSupplier;
 
 	/**
 	 * The {@code Supplier<Pose2d>} that provides the {@code Pose2d} to which the
@@ -41,24 +41,24 @@ public class DriveCommand2 extends Command {
 	 * when the scheduler begins to periodically execute this {@code
 	 * DriveCommand}).
 	 */
-	private Supplier<Pose2d> m_targetPoseSupplier;
+	protected Supplier<Pose2d> m_targetPoseSupplier;
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
 	 * dimensions in meters.
 	 */
-	private ProfiledPIDController m_controllerXY;
+	protected ProfiledPIDController m_controllerXY;
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
 	 * dimension in angles.
 	 */
-	private ProfiledPIDController m_controllerYaw;
+	protected ProfiledPIDController m_controllerYaw;
 
 	/**
 	 * The {@code Pose2d} to which the robot should move.
 	 */
-	private Pose2d m_targetPose;
+	protected Pose2d m_targetPose;
 
 	/**
 	 * Constructs a new {@code DriveCommand2} whose purpose is to move the
@@ -114,14 +114,44 @@ public class DriveCommand2 extends Command {
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance) {
+		this(driveSubsystem, poseSupplier, targetPoseSupplier, distanceTolerance, angleTolerance,
+				new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
+						new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration)),
+				new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
+						new TrapezoidProfile.Constraints(Math.toDegrees(kTurnMaxAngularSpeed),
+								Math.toDegrees(kTurnMaxAcceleration))));
+	}
+
+	/**
+	 * Constructs a new {@code DriveCommand2} whose purpose is to move the
+	 * robot to a certain {@code Pose2d}.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseSupplier the {@code Supplier} providing the current {@code Pose2d}
+	 *        of the robot
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        {@code Pose2d} to which the robot should move.
+	 *        This is used at the commencement of this
+	 *        {@code DriveCommand2} (i.e., when the scheduler
+	 *        begins to periodically execute this
+	 *        {@code DriveCommand2})
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param controllerXY the {@code ProfiledPIDController} for controlling the
+	 *        robot in the x and y dimensions in meters
+	 * @param controllerYaw the {@code ProfiledPIDController} for controlling the
+	 *        robot in the yaw dimension in angles
+	 * 
+	 */
+	public DriveCommand2(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+			Supplier<Pose2d> targetPoseSupplier,
+			double distanceTolerance,
+			double angleTolerance, ProfiledPIDController controllerXY, ProfiledPIDController controllerYaw) {
 		m_driveSubsystem = driveSubsystem;
 		m_poseSupplier = poseSupplier;
 		m_targetPoseSupplier = targetPoseSupplier;
-		var constraints = new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration);
-		m_controllerXY = new ProfiledPIDController(kDriveP, kDriveI, kDriveD, constraints);
-		m_controllerYaw = new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
-				new TrapezoidProfile.Constraints(Math.toDegrees(kTurnMaxAngularSpeed),
-						Math.toDegrees(kTurnMaxAcceleration)));
+		m_controllerXY = controllerXY;
+		m_controllerYaw = controllerYaw;
 		m_controllerXY.setTolerance(distanceTolerance);
 		m_controllerYaw.setTolerance(angleTolerance);
 		m_controllerYaw.enableContinuousInput(-180, 180);
