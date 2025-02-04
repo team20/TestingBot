@@ -207,8 +207,8 @@ public class Robot extends TimedRobot {
 		CommandScheduler.getInstance().cancelAll();
 		sequence(
 				m_driveSubsystem.testCommand(), // F, B, SL, SR, RL, RR
-				DriveCommand.testCommand(m_driveSubsystem),
-				DriveCommand2.testCommand(m_driveSubsystem))
+				DriveCommand.testCommand(m_driveSubsystem).withTimeout(2),
+				DriveCommand2.testCommand(m_driveSubsystem).withTimeout(2))
 						.schedule();
 	}
 

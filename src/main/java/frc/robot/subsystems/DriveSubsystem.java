@@ -150,20 +150,14 @@ public class DriveSubsystem extends SubsystemBase {
 	 * @return The module states, in order of FL, FR, BL, BR
 	 */
 	private SwerveModuleState[] calculateModuleStates(ChassisSpeeds speeds, boolean isFieldRelative) {
-		if (isFieldRelative) {
+		if (isFieldRelative)
 			speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
-		}
-		// speeds --> target module states
 		SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(speeds);
-		// normalization
 		SwerveDriveKinematics.desaturateWheelSpeeds(states, kDriveMaxSpeed);
-		// Get the current module angles
 		double[] moduleAngles = { m_frontLeft.getModuleAngle(), m_frontRight.getModuleAngle(),
 				m_backLeft.getModuleAngle(), m_backRight.getModuleAngle() };
-		for (int i = 0; i < states.length; i++) {
-			// Optimize target module states
+		for (int i = 0; i < states.length; i++) // Optimize target module states
 			states[i].optimize(Rotation2d.fromDegrees(moduleAngles[i]));
-		}
 		return states;
 	}
 
@@ -189,10 +183,6 @@ public class DriveSubsystem extends SubsystemBase {
 	 * @param isFieldRelative Whether or not the speeds are relative to the field
 	 */
 	public void drive(double speedFwd, double speedSide, double speedRot, boolean isFieldRelative) {
-		if (RobotBase.isSimulation()) {
-			// TODO: Use SysId to get feedforward model for rotation
-			m_gyroSim.set(-Math.toDegrees(speedRot) * TimedRobot.kDefaultPeriod + m_gyro.getYaw());
-		}
 		setModuleStates(calculateModuleStates(new ChassisSpeeds(speedFwd, speedSide, speedRot), isFieldRelative));
 	}
 
@@ -202,11 +192,14 @@ public class DriveSubsystem extends SubsystemBase {
 	 */
 	@Override
 	public void periodic() {
-		m_posePublisher.set(m_odometry.update(getHeading(), getModulePositions()));
 		SwerveModuleState[] states = { m_frontLeft.getModuleState(), m_frontRight.getModuleState(),
 				m_backLeft.getModuleState(), m_backRight.getModuleState() };
 		m_currentModuleStatePublisher.set(states);
-		m_currentChassisSpeedsPublisher.set(m_kinematics.toChassisSpeeds(states));
+		var speeds = m_kinematics.toChassisSpeeds(states);
+		m_currentChassisSpeedsPublisher.set(speeds);
+		if (RobotBase.isSimulation())// TODO: Use SysId to get feedforward model for rotation
+			m_gyroSim.set(-Math.toDegrees(speeds.omegaRadiansPerSecond * TimedRobot.kDefaultPeriod) + m_gyro.getYaw());
+		m_posePublisher.set(m_odometry.update(getHeading(), getModulePositions()));
 	}
 
 	/**

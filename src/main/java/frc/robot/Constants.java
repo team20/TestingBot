@@ -54,9 +54,9 @@ public class Constants {
 
 		// Make sure these are tuned (can do with SysId)
 		// public static final double kP = 0.09;
-		public static final double kP = 0.03;
+		public static final double kP = 0.05; // TODO: find a good value
 		public static final double kI = 0.0;
-		public static final double kD = kP * 0.05;
+		public static final double kD = kP * 0.1; // TODO: find a good value
 		// public static final double kD = 0;
 		public static final double kS = 0;
 		// public static final double kV = 0.11;
@@ -80,8 +80,7 @@ public class Constants {
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
-		// TODO adjust kDriveGearRatio or kWheelDiameter so that we can remove 0.93 in
-		// the following
+		// TODO adjust kDriveGearRatio or kWheelDiameter so that we can remove 0.93
 		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio * 0.93;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
