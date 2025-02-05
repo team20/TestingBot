@@ -4,20 +4,35 @@
 
 package frc.robot;
 
+import static edu.wpi.first.wpilibj2.command.Commands.*;
+import static frc.robot.Constants.*;
+import static frc.robot.Constants.RobotConstants.*;
+import static frc.robot.subsystems.PoseEstimationSubsystem.*;
+
 import java.util.Map;
+import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.urcl.URCL;
+import org.photonvision.PhotonCamera;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants.ControllerConstants;
+import frc.robot.Constants.ControllerConstants.Button;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.PhotonCameraSimulator;
+import frc.robot.subsystems.PoseEstimationSubsystem;
+import frc.robot.subsystems.VisionSimulator;
 
 public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
@@ -25,6 +40,17 @@ public class Robot extends TimedRobot {
 	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
+	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
+			pose(kFieldLayout.getFieldLength() / 2, 1.91, 0), 0.01);
+	private final PhotonCamera m_camera1 = RobotBase.isSimulation()
+			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_visionSimulator, 3, 0.1)
+			: new PhotonCamera("Cool camera");
+	private final PhotonCamera m_camera2 = RobotBase.isSimulation()
+			? new PhotonCameraSimulator("Camera2", kRobotToCamera2, m_visionSimulator, 3, 0.1)
+			: new PhotonCamera("Cool camera2");
+	private final PoseEstimationSubsystem m_poseEstimationSubystem = new PoseEstimationSubsystem(m_driveSubsystem)
+			.addCamera(m_camera1, kRobotToCamera1)
+			.addCamera(m_camera2, kRobotToCamera2);
 
 	public Robot() {
 		SmartDashboard.putData(m_pdh);
@@ -46,6 +72,42 @@ public class Robot extends TimedRobot {
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
 						m_driverController.getHID()::getSquareButton));
+
+		m_driverController.button(Button.kSquare)
+				.whileTrue(
+						driveWithAlignmentCommand(
+								() -> -m_driverController.getLeftY(),
+								() -> -m_driverController.getLeftX(),
+								() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
+								new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2));
+	}
+
+	/**
+	 * Creates a {@code Command} to automatically align the robot to the closest tag
+	 * while driving the robot with joystick input.
+	 *
+	 * @param forwardSpeed forward speed supplier. Positive values make the robot
+	 *        go forward (+X direction).
+	 * @param strafeSpeed strafe speed supplier. Positive values make the robot
+	 *        go to the left (+Y direction).
+	 * @param rotation rotation speed supplier. Positive values make the
+	 *        robot rotate CCW.
+	 * @param isFieldRelative {@code Supplier} for determining whether or not
+	 *        driving should be field relative.
+	 * @return a {@code Command} to automatically align the robot to the closest tag
+	 *         while driving the robot with joystick input
+	 */
+	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
+			DoubleSupplier rotation, Transform2d robotToTarget, double distanceThresholdInMeters) {
+
+		return run(() -> {
+			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
+			speeds = speeds
+					.plus(
+							m_poseEstimationSubystem
+									.chassisSpeedsTowardClosestTag(robotToTarget, distanceThresholdInMeters));
+			m_driveSubsystem.drive(speeds.plus(speeds), true);
+		});
 	}
 
 	@Override
@@ -100,6 +162,7 @@ public class Robot extends TimedRobot {
 	@Override
 	public void testInit() {
 		CommandScheduler.getInstance().cancelAll();
+		m_driveSubsystem.testCommand().schedule();
 	}
 
 	@Override

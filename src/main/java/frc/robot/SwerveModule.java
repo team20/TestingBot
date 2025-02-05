@@ -7,12 +7,11 @@ package frc.robot;
 import static frc.robot.Constants.DriveConstants.*;
 
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
@@ -23,6 +22,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /**
@@ -32,35 +32,42 @@ public class SwerveModule {
 	private final PIDController m_steerController = new PIDController(kP, kI, kD);
 	private final CANcoder m_CANCoder;
 	private final SparkMax m_driveMotor;
+	private final SparkMaxSim m_driveMotorSim;
 	private final SparkMax m_steerMotor;
-
 	private final SparkMaxSim m_steerMotorSim;
 	private final DCMotorSim m_driveMotorModel;
 	private final DCMotorSim m_steerMotorModel;
 
-	private final RelativeEncoder m_relativeEncoder;
-
 	public SwerveModule(int canId, int drivePort, int steerPort) {
 		m_CANCoder = new CANcoder(canId);
 		m_driveMotor = new SparkMax(drivePort, MotorType.kBrushless);
+		m_driveMotorSim = new SparkMaxSim(m_driveMotor, DCMotor.getNEO(1));
 		m_steerMotor = new SparkMax(steerPort, MotorType.kBrushless);
 		m_steerMotorSim = new SparkMaxSim(m_steerMotor, DCMotor.getNEO(1));
-		m_relativeEncoder = m_driveMotor.getEncoder();
 
 		var config = new SparkMaxConfig();
 		config.idleMode(IdleMode.kBrake).voltageCompensation(12);
 		config.openLoopRampRate(kRampRate).closedLoopRampRate(kRampRate);
 		// Helps with encoder precision (not set in stone)
 		config.encoder.uvwAverageDepth(kEncoderDepth).uvwMeasurementPeriod(kEncoderMeasurementPeriod);
+		config.smartCurrentLimit(kDriveSmartCurrentLimit).secondaryCurrentLimit(kDrivePeakCurrentLimit);
+		m_driveMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+		config = new SparkMaxConfig();
+		config.idleMode(IdleMode.kBrake).voltageCompensation(12);
+		config.openLoopRampRate(kRampRate).closedLoopRampRate(kRampRate);
+		// Helps with encoder precision (not set in stone)
+		config.encoder.uvwAverageDepth(kEncoderDepth).uvwMeasurementPeriod(kEncoderMeasurementPeriod);
 		config.smartCurrentLimit(kSteerSmartCurrentLimit).secondaryCurrentLimit(kSteerPeakCurrentLimit);
 		m_steerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
 		m_steerController.enableContinuousInput(0, 360);
 		if (RobotBase.isSimulation()) {
 			m_driveMotorModel = new DCMotorSim(
 					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), kA / (2 * Math.PI)),
-					DCMotor.getKrakenX60(1).withReduction(kGearRatio));
+					DCMotor.getKrakenX60(1).withReduction(kDriveGearRatio));
 			m_steerMotorModel = new DCMotorSim(
-					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), 0.0001 / (2 * Math.PI)),
+					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), kA / (2 * Math.PI)),
 					DCMotor.getKrakenX60(1));
 		} else {
 			m_driveMotorModel = null;
@@ -75,7 +82,7 @@ public class SwerveModule {
 	 * @return The position in meters.
 	 */
 	public double getDriveEncoderPosition() {
-		return m_relativeEncoder.getPosition() * kMetersPerMotorRotation;
+		return m_driveMotor.getEncoder().getPosition() * kMetersPerMotorRotation;
 	}
 
 	public double getSteerCurrent() {
@@ -90,7 +97,7 @@ public class SwerveModule {
 	 * Resets drive encoder to zero.
 	 */
 	public void resetDriveEncoder() {
-		m_relativeEncoder.setPosition(0);
+		m_driveMotor.getEncoder().setPosition(0);
 	}
 
 	/**
@@ -99,7 +106,7 @@ public class SwerveModule {
 	 * @return The motor speed in voltage
 	 */
 	public double getDriveVoltage() {
-		return m_driveMotor.getAppliedOutput();
+		return m_driveMotor.getAppliedOutput() * kDriveMaxVoltage;
 	}
 
 	/**
@@ -151,22 +158,36 @@ public class SwerveModule {
 		updateSim();
 	}
 
+	/**
+	 * Sets the module angle.
+	 * 
+	 * @param angle the target angle
+	 */
+	public void setAngle(double angle) {
+		m_steerMotor.setVoltage(m_steerController.calculate(getModuleAngle(), angle));
+		updateSim();
+	}
+
+	/**
+	 * Updates this {@code SwerveModule} for simulations.
+	 */
 	private void updateSim() {
 		if (RobotBase.isSimulation()) {
-			// var driveMotorState = m_driveMotor.getSimState();
-			// m_driveMotorModel.setInputVoltage(driveMotorState.getMotorVoltage());
-			m_driveMotorModel.update(0.02);
-			// driveMotorState.setRotorVelocity(m_driveMotorModel.getAngularVelocityRPM() /
-			// 60);
-			// driveMotorState.setRawRotorPosition(m_driveMotorModel.getAngularPositionRotations());
+			m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * kDriveMaxVoltage);
+			m_driveMotorModel.update(TimedRobot.kDefaultPeriod);
+			m_driveMotorSim
+					.iterate(m_driveMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, TimedRobot.kDefaultPeriod);
+			m_driveMotorSim.setPosition(m_driveMotorModel.getAngularPositionRotations());
+			m_driveMotorSim.setVelocity(m_driveMotorModel.getAngularVelocityRPM());
+
+			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * kDriveMaxVoltage);
+			m_steerMotorModel.update(TimedRobot.kDefaultPeriod);
+			m_steerMotorSim
+					.iterate(m_steerMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, TimedRobot.kDefaultPeriod);
 			var encoderSimState = m_CANCoder.getSimState();
-			// These used to be CAN IDs, but apparently any other value causes complete
-			// destabilization of the swerve sim. Do not touch.
-			m_steerMotorSim.iterate(30, 32, 0.02);
-			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * 12);
-			m_steerMotorModel.update(0.02);
-			encoderSimState.setRawPosition(m_steerMotorModel.getAngularPositionRotations());
-			encoderSimState.setVelocity(m_steerMotorModel.getAngularVelocityRPM());
+			encoderSimState.setRawPosition(m_steerMotorModel.getAngularPositionRotations() / kSteerGearRatio);
+			encoderSimState.setVelocity(m_steerMotorModel.getAngularVelocityRPM() / kSteerGearRatio);
 		}
 	}
+
 }
