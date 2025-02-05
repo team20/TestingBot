@@ -72,7 +72,8 @@ public class Constants {
 		// public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
 		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
 		public static final double kDriveMinSpeed = .3; // .3 meters per second // TODO: find a good value
-		public static final double kTurnMaxAngularSpeed = Math.PI; // 1/2 rotation per second
+		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
+		public static final double kTurnMinAngularSpeed = Math.toRadians(5); // 5 degrees per second
 		public static final double kDriveMaxVoltage = 12;
 
 		public static final double kDriveGearRatio = 6.12;

@@ -175,15 +175,60 @@ public class DriveSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Creates a {@code chassisSpeeds} from the joystick input.
+	 *
+	 * @param forwardSpeed Forward speed supplier. Positive values make the robot
+	 *        go forward (+X direction).
+	 * @param strafeSpeed Strafe speed supplier. Positive values make the robot
+	 *        go to the left (+Y direction).
+	 * @param rotation Rotation speed supplier. Positive values make the
+	 *        robot rotate CCW.
+	 * @param isFieldRelative Supplier for determining if driving should be field
+	 *        relative.
+	 * @return {@code chassisSpeeds} from the joystick input
+	 */
+	public static ChassisSpeeds chassisSpeeds(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
+			DoubleSupplier rotation) {
+		// Get the forward, strafe, and rotation speed, using a deadband on the joystick
+		// input so slight movements don't move the robot
+		double vxMetersPerSecond = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);
+		vxMetersPerSecond = Math.signum(vxMetersPerSecond) * Math.pow(vxMetersPerSecond, 2) * kDriveMaxSpeed;
+
+		double vyMetersPerSecond = MathUtil.applyDeadband(strafeSpeed.getAsDouble(), ControllerConstants.kDeadzone);
+		vyMetersPerSecond = Math.signum(vyMetersPerSecond) * Math.pow(vyMetersPerSecond, 2) * kDriveMaxSpeed;
+
+		double omegaRadiansPerSecond = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
+		omegaRadiansPerSecond = Math.signum(omegaRadiansPerSecond) * Math.pow(omegaRadiansPerSecond, 2)
+				* kTurnMaxAngularSpeed;
+
+		return new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
+	}
+
+	/**
 	 * Drives the robot.
 	 * 
-	 * @param speedFwd The forward speed in meters per second
-	 * @param speedSide The sideways speed in meters per second
-	 * @param speedRot The rotation speed in radians per second
+	 * @param vxMetersPerSecond forward velocity in meters per second
+	 * @param vyMetersPerSecond sideways velocity in meters per second
+	 * @param omegaRadiansPerSecond angular velocityin radians per second
+	 * @param isFieldRelative a boolean value indicating whether or not the
+	 *        veloicities are relative to the field
+	 */
+	public void drive(double vxMetersPerSecond, double vyMetersPerSecond, double omegaRadiansPerSecond,
+			boolean isFieldRelative) {
+		setModuleStates(
+				calculateModuleStates(
+						new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond),
+						isFieldRelative));
+	}
+
+	/**
+	 * Drives the robot.
+	 * 
+	 * @param chassisSpeeds the {@code ChassisSpeeds} for the robot
 	 * @param isFieldRelative Whether or not the speeds are relative to the field
 	 */
-	public void drive(double speedFwd, double speedSide, double speedRot, boolean isFieldRelative) {
-		setModuleStates(calculateModuleStates(new ChassisSpeeds(speedFwd, speedSide, speedRot), isFieldRelative));
+	public void drive(ChassisSpeeds chassisSpeeds, boolean isFieldRelative) {
+		setModuleStates(calculateModuleStates(chassisSpeeds, isFieldRelative));
 	}
 
 	/**
@@ -218,18 +263,7 @@ public class DriveSubsystem extends SubsystemBase {
 	public Command driveCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
 			DoubleSupplier rotation, BooleanSupplier isFieldRelative) {
 		return run(() -> {
-			// Get the forward, strafe, and rotation speed, using a deadband on the joystick
-			// input so slight movements don't move the robot
-			double fwdSpeed = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);
-			fwdSpeed = Math.signum(fwdSpeed) * Math.pow(fwdSpeed, 2) * kDriveMaxSpeed;
-
-			double strSpeed = MathUtil.applyDeadband(strafeSpeed.getAsDouble(), ControllerConstants.kDeadzone);
-			strSpeed = Math.signum(strSpeed) * Math.pow(strSpeed, 2) * kDriveMaxSpeed;
-
-			double rotSpeed = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
-			rotSpeed = Math.signum(rotSpeed) * Math.pow(rotSpeed, 2) * kTurnMaxAngularSpeed;
-
-			drive(fwdSpeed, strSpeed, rotSpeed, isFieldRelative.getAsBoolean());
+			drive(chassisSpeeds(forwardSpeed, strafeSpeed, rotation), isFieldRelative.getAsBoolean());
 		}).withName("DefaultDriveCommand");
 	}
 

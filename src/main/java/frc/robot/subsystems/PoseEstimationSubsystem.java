@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static frc.robot.Constants.*;
+import static frc.robot.Constants.DriveConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,12 +15,14 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -76,6 +79,20 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	private final StructPublisher<Pose2d> m_estimatedPosePublisher;
 
 	/**
+	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
+	 * dimensions in meters (input: error in meters, output: velocity in meters per
+	 * second).
+	 */
+	private PIDController m_controllerXY;
+
+	/**
+	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
+	 * dimension in degrees (input: error in degrees, output: velocity in radians
+	 * per second).
+	 */
+	private PIDController m_controllerYaw;
+
+	/**
 	 * Constructs a {@code PoseEstimationSubsystem}.
 	 * 
 	 * @param driveSubsystem {@code DriveSubsystem} to be used by the
@@ -96,6 +113,12 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		m_estimatedPosePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Pose@PoseEstimationSubsystem", Pose2d.struct)
 				.publish();
+		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
+		m_controllerXY.setSetpoint(0);
+
+		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
+		m_controllerYaw.enableContinuousInput(-180, 180);
+		m_controllerYaw.setSetpoint(0);
 	}
 
 	/**
@@ -146,6 +169,31 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public Pose2d getEstimatedPose() {
 		return m_poseEstimator.getEstimatedPosition();
+	}
+
+	/**
+	 * Calculates the {@code ChassisSpeeds} for moving to the closest
+	 * {@code AprilTag}.
+	 * 
+	 * @param robotToTarget the {@code Tranform2d} representing the pose of the
+	 *        target relative to the robot
+	 * @param distanceThresholdInMeters the maximum distance (in meters) within
+	 *        which {@code AprilTag}s are considered
+	 * @return the calculated {@code ChassisSpeeds} for moving to the closest
+	 *         {@code AprilTag}
+	 */
+	public ChassisSpeeds chassisSpeedsToClosestTag(Transform2d robotToTarget, double distanceThresholdInMeters) {
+		var pose = getEstimatedPose();
+		var targetPose = closestTagPose(180, distanceThresholdInMeters);
+		if (targetPose != null) {
+			targetPose = targetPose.plus(robotToTarget);
+			Translation2d t = targetPose.getTranslation().minus(pose.getTranslation());
+			double speed = m_controllerXY.calculate(t.getNorm());
+			t = t.getNorm() > 0 ? t.times(-speed / t.getNorm()) : t;
+			return new ChassisSpeeds(t.getX(), t.getY(), -m_controllerYaw
+					.calculate(targetPose.getRotation().minus(pose.getRotation()).getDegrees()));
+		}
+		return new ChassisSpeeds();
 	}
 
 	/**

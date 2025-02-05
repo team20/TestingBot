@@ -44,19 +44,22 @@ public class DriveCommand extends Command {
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the x
-	 * dimension in meters.
+	 * dimension in meters (input: error in meters, output: velocity in meters per
+	 * second).
 	 */
 	private ProfiledPIDController m_controllerX;
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the y
-	 * dimension in meters.
+	 * dimension in meters (input: error in meters, output: velocity in meters per
+	 * second).
 	 */
 	private ProfiledPIDController m_controllerY;
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
-	 * dimension in angles.
+	 * dimension in degrees (input: error in degrees, output: velocity in radians
+	 * per second).
 	 */
 	private ProfiledPIDController m_controllerYaw;
 

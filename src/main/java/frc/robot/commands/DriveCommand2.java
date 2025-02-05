@@ -45,13 +45,15 @@ public class DriveCommand2 extends Command {
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
-	 * dimensions in meters.
+	 * dimensions in meters (input: error in meters, output: velocity in meters per
+	 * second).
 	 */
 	protected ProfiledPIDController m_controllerXY;
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
-	 * dimension in angles.
+	 * dimension in degrees (input: error in degrees, output: velocity in radians
+	 * per second).
 	 */
 	protected ProfiledPIDController m_controllerYaw;
 
@@ -195,6 +197,7 @@ public class DriveCommand2 extends Command {
 		double speedYaw = m_controllerYaw.calculate(pose.getRotation().getDegrees());
 		speedX = applyThreshold(speedX, kDriveMinSpeed);
 		speedY = applyThreshold(speedY, kDriveMinSpeed);
+		speedYaw = applyThreshold(speedYaw, kTurnMinAngularSpeed);
 		m_driveSubsystem.drive(speedX, speedY, speedYaw, true);
 	}
 
