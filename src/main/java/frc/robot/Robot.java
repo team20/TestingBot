@@ -106,7 +106,7 @@ public class Robot extends TimedRobot {
 					.plus(
 							m_poseEstimationSubystem
 									.chassisSpeedsTowardClosestTag(robotToTarget, distanceThresholdInMeters));
-			m_driveSubsystem.drive(speeds.plus(speeds), true);
+			m_driveSubsystem.drive(speeds, true);
 		});
 	}
 
