@@ -6,6 +6,7 @@ package frc.robot;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.*;
+import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
@@ -17,9 +18,12 @@ import java.util.Map;
 import org.littletonrobotics.urcl.URCL;
 import org.photonvision.PhotonCamera;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -109,10 +113,14 @@ public class Robot extends TimedRobot {
 
 		m_driverController.button(Button.kLeftBumper)
 				.whileTrue(
-						AlignCommand.moveToClosestTag(
-								m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
-								distanceThresholdInMeters, robotToTarget,
-								distanceTolerance, angleTolerance));
+						driveToClosestTag(new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2));
+
+		// m_driverController.button(Button.kLeftBumper)
+		// .whileTrue(
+		// AlignCommand.moveToClosestTag(
+		// m_driveSubsystem, m_poseEstimationSubystem, angleOfCoverageInDegrees,
+		// distanceThresholdInMeters, robotToTarget,
+		// distanceTolerance, angleTolerance));
 
 		m_driverController.button(Button.kRightBumper)
 				.whileTrue(
@@ -134,6 +142,48 @@ public class Robot extends TimedRobot {
 		// m_driveSubsystem, m_poseEstimationSubystem, distanceTolerance,
 		// angleTolerance,
 		// robotToTarget, 12, 15, 14, 16, 17, 18, 19, 20, 21, 22));
+	}
+
+	Command driveToClosestTag(Transform2d robotToTarget, double distanceThresholdInMeters) {
+		@SuppressWarnings("resource")
+		PIDController controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
+		controllerXY.setSetpoint(0);
+
+		@SuppressWarnings("resource")
+		PIDController controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
+		controllerYaw.enableContinuousInput(-180, 180);
+		controllerYaw.setSetpoint(0);
+
+		return run(() -> {
+
+			double fwdSpeed = MathUtil
+					.applyDeadband(-m_driverController.getLeftY(), ControllerConstants.kDeadzone);
+			fwdSpeed = Math.signum(fwdSpeed) * Math.pow(fwdSpeed, 2) * kDriveMaxSpeed;
+
+			double strSpeed = MathUtil
+					.applyDeadband(-m_driverController.getLeftX(), ControllerConstants.kDeadzone);
+			strSpeed = Math.signum(strSpeed) * Math.pow(strSpeed, 2) * kDriveMaxSpeed;
+
+			double rotSpeed = MathUtil.applyDeadband(
+					m_driverController.getR2Axis() - m_driverController.getL2Axis(), ControllerConstants.kDeadzone);
+			rotSpeed = Math.signum(rotSpeed) * Math.pow(rotSpeed, 2) * kTurnMaxAngularSpeed;
+
+			var pose = m_poseEstimationSubystem.getEstimatedPose();
+
+			var targetPose = m_poseEstimationSubystem
+					.closestTagPose(180, distanceThresholdInMeters);
+			if (targetPose != null) {
+				targetPose = targetPose.plus(robotToTarget);
+				Translation2d t = targetPose.getTranslation().minus(pose.getTranslation());
+				double speed = controllerXY.calculate(t.getNorm());
+				t = t.getNorm() > 0 ? t.times(-speed / t.getNorm()) : t; // translation toward target
+				fwdSpeed += t.getX();
+				strSpeed += t.getY();
+				rotSpeed += -controllerYaw
+						.calculate(targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+			}
+			m_driveSubsystem.drive(fwdSpeed, strSpeed, rotSpeed, true);
+		});
 	}
 
 	Command alignTest(int tagID, Transform2d robotToTarget, double distanceTolerance, double angleTolerance) {

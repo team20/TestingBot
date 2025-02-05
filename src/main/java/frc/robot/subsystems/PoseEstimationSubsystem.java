@@ -150,15 +150,20 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
 	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest (in terms of
-	 * angular displacement) to the specified {@code Pose2d}.
+	 * angular displacement) to the robot when the specified {@code Translation2d}
+	 * is applied to the robot.
 	 * 
-	 * @param pose a {@code Pose2d}
+	 * @param translation a {@code Translation2d}
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
 	 *        which {@code AprilTag}s are considered
 	 * @return the {@code Pose2d} of the {@code AprilTag} that is closest (in terms
-	 *         of angular displacement) to the specified {@code Pose2d}
+	 *         of angular displacement) to the robot when the specified
+	 *         {@code Translation2d} is applied to the robot
 	 */
-	public Pose2d closestTagPose(Pose2d pose, double distanceThresholdInMeters) {
+	public Pose2d closestTagPose(Translation2d translation, double distanceThresholdInMeters) {
+		var pose = getEstimatedPose();
+		if (translation.getNorm() > 0)
+			pose = new Pose2d(pose.getTranslation(), translation.getAngle());
 		var i = closestTagID(pose, distanceThresholdInMeters);
 		return i == null ? null : kFieldLayout.getTagPose(i).get().toPose2d();
 	}
