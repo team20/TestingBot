@@ -79,14 +79,14 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	private final StructPublisher<Pose2d> m_estimatedPosePublisher;
 
 	/**
-	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
+	 * The {@code PIDController} for controlling the robot in the x and y
 	 * dimensions in meters (input: error in meters, output: velocity in meters per
 	 * second).
 	 */
 	private PIDController m_controllerXY;
 
 	/**
-	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
+	 * The {@code PIDController} for controlling the robot in the yaw
 	 * dimension in degrees (input: error in degrees, output: velocity in radians
 	 * per second).
 	 */
@@ -172,28 +172,72 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Calculates the {@code ChassisSpeeds} for moving to the closest
+	 * Calculates the {@code ChassisSpeeds} to move the robot towards the closest
 	 * {@code AprilTag}.
 	 * 
-	 * @param robotToTarget the {@code Tranform2d} representing the pose of the
-	 *        target relative to the robot
+	 * @param robotToTag the {@code Tranform2d} representing the pose of the
+	 *        {@code AprilTag} relative to the robot when the robot is aligned
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
 	 *        which {@code AprilTag}s are considered
-	 * @return the calculated {@code ChassisSpeeds} for moving to the closest
-	 *         {@code AprilTag}
+	 * @return the calculated {@code ChassisSpeeds} to move the robot towards the
+	 *         closest {@code AprilTag}
 	 */
-	public ChassisSpeeds chassisSpeedsToClosestTag(Transform2d robotToTarget, double distanceThresholdInMeters) {
-		var pose = getEstimatedPose();
-		var targetPose = closestTagPose(180, distanceThresholdInMeters);
-		if (targetPose != null) {
-			targetPose = targetPose.plus(robotToTarget);
-			Translation2d t = targetPose.getTranslation().minus(pose.getTranslation());
-			double speed = m_controllerXY.calculate(t.getNorm());
-			t = t.getNorm() > 0 ? t.times(-speed / t.getNorm()) : t;
-			return new ChassisSpeeds(t.getX(), t.getY(), -m_controllerYaw
-					.calculate(targetPose.getRotation().minus(pose.getRotation()).getDegrees()));
+	public ChassisSpeeds chassisSpeedsTowardClosestTag(Transform2d robotToTag, double distanceThresholdInMeters) {
+		var currentRobotPose = getEstimatedPose();
+		var closestTagPose = closestTagPose(180, distanceThresholdInMeters);
+		if (closestTagPose == null)
+			return new ChassisSpeeds();
+		var targetRobotPose = closestTagPose.plus(robotToTag);
+		return chassisSpeeds(currentRobotPose, targetRobotPose, m_controllerXY, m_controllerYaw);
+	}
+
+	/**
+	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
+	 * towards the target {@code Pose2d}.
+	 * 
+	 * @param currentPose the current {@code Pose2d}
+	 * @param targetPose the target {@code Pose2d}
+	 * @param contollerXY the {@code PIDController} for controlling the robot in the
+	 *        x and y dimensions in meters (input: error in meters, output: velocity
+	 *        in meters per second)
+	 * @param controllerYaw the {@code PIDController} for controlling the robot in
+	 *        the yaw dimension in degrees (input: error in degrees, output:
+	 *        velocity in radians per second)
+	 * @return the calculated {@code ChassisSpeeds} to move from the current
+	 *         {@code Pose2d} towards the target {@code Pose2d}
+	 */
+	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController contollerXY,
+			PIDController controllerYaw) {
+		Translation2d translationalDisplacement = targetPose.getTranslation()
+				.minus(currentPose.getTranslation());
+		double velocityX = 0, velocityY = 0;
+		double distance = translationalDisplacement.getNorm();
+		if (distance > 0) {
+			// calculate(double) returns a non-positive value (setpoint: 0)
+			double speed = -contollerXY.calculate(distance);
+			velocityX = speed * translationalDisplacement.getAngle().getCos();
+			velocityY = speed * translationalDisplacement.getAngle().getSin();
 		}
-		return new ChassisSpeeds();
+		Rotation2d angularDisplacement = targetPose.getRotation().minus(currentPose.getRotation());
+		// calculate(double) returns a non-positive value (setpoint: 0)
+		double angularVelocityRadiansPerSecond = -controllerYaw.calculate(angularDisplacement.getDegrees());
+		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
+	}
+
+	/**
+	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest to the robot
+	 * ({@code null} if no such {@code AprilTag}).
+	 * 
+	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
+	 *        which {@code AprilTag}s are considered (maximum: 180)
+	 * @param distanceThresholdInMeters the maximum distance (in meters) within
+	 *        which {@code AprilTag}s are considered
+	 * @return the {@code Pose2d} of the {@code AprilTag} that is closest to the
+	 *         robot ({@code null} if no such {@code AprilTag})
+	 */
+	public Pose2d closestTagPose(double angleOfCoverageInDegrees, double distanceThresholdInMeters) {
+		var i = closestTagID(getEstimatedPose(), angleOfCoverageInDegrees, distanceThresholdInMeters);
+		return i == null ? null : kFieldLayout.getTagPose(i).get().toPose2d();
 	}
 
 	/**
@@ -243,22 +287,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 			return closest.get().getKey();
 		} else
 			return null;
-	}
-
-	/**
-	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest to the robot
-	 * ({@code null} if no such {@code AprilTag}).
-	 * 
-	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
-	 *        which {@code AprilTag}s are considered (maximum: 180)
-	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the {@code Pose2d} of the {@code AprilTag} that is closest to the
-	 *         robot ({@code null} if no such {@code AprilTag})
-	 */
-	public Pose2d closestTagPose(double angleOfCoverageInDegrees, double distanceThresholdInMeters) {
-		var i = closestTagID(getEstimatedPose(), angleOfCoverageInDegrees, distanceThresholdInMeters);
-		return i == null ? null : kFieldLayout.getTagPose(i).get().toPose2d();
 	}
 
 	/**

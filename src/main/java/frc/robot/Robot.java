@@ -152,8 +152,10 @@ public class Robot extends TimedRobot {
 		return run(() -> {
 			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
 			speeds = speeds
-					.plus(m_poseEstimationSubystem.chassisSpeedsToClosestTag(robotToTarget, distanceThresholdInMeters));
-			m_driveSubsystem.drive(speeds.plus(speeds), true);
+					.plus(
+							m_poseEstimationSubystem
+									.chassisSpeedsTowardClosestTag(robotToTarget, distanceThresholdInMeters));
+			m_driveSubsystem.drive(speeds, true);
 		});
 	}
 
