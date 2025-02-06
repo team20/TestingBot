@@ -6,15 +6,18 @@ import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
- * This {@code DriveCommandOptimized} aims to maneuver the robot to a certain
+ * This {@code SubsequentDriveCommand} aims to maneuver the robot to a certain
  * {@code Pose2d}.
  * It utilizes two {@code ProfiledPIDController}s to precisely control the
- * robot in the x, y, and yaw dimensions.
+ * robot in the x, y, and yaw dimensions. A {@code SubsequentDriveCommand} is a
+ * {@code DriveCommand} and is always used after a {@code DriveCommand} for
+ * optimizations through re-use of the {@code ProfiledPIDController}s of the
+ * previous {@code DriveCommand}.
  * 
  * @author Jeong-Hyon Hwang (jhhbrown@gmail.com)
  * @author Andrew Hwang (u.andrew.h@gmail.com)
  */
-public class DriveCommandOptimized extends DriveCommand {
+public class SubsequentDriveCommand extends DriveCommand {
 
 	/**
 	 * The distance error in meters which is tolerable.
@@ -27,7 +30,7 @@ public class DriveCommandOptimized extends DriveCommand {
 	private double m_angleTolerance;
 
 	/**
-	 * Constructs a new {@code DriveCommandOptimized} whose purpose is to move the
+	 * Constructs a new {@code SubsequentDriveCommand} whose purpose is to move the
 	 * robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
@@ -35,16 +38,16 @@ public class DriveCommandOptimized extends DriveCommand {
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 * @param previous the {@code DriveCommand2} right before the new
-	 *        {@code DriveCommandOptimized}
+	 *        {@code SubsequentDriveCommand}
 	 */
-	public DriveCommandOptimized(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
+	public SubsequentDriveCommand(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
 			double angleTolerance, DriveCommand previous) {
 		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance, angleTolerance,
 				previous);
 	}
 
 	/**
-	 * Constructs a new {@code DriveCommandOptimized} whose purpose is to move the
+	 * Constructs a new {@code SubsequentDriveCommand} whose purpose is to move the
 	 * robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
@@ -53,15 +56,15 @@ public class DriveCommandOptimized extends DriveCommand {
 	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
 	 *        {@code Pose2d} to which the robot should move.
 	 *        This is used at the commencement of this
-	 *        {@code DriveCommandOptimized} (i.e., when the scheduler
+	 *        {@code SubsequentDriveCommand} (i.e., when the scheduler
 	 *        begins to periodically execute this
-	 *        {@code DriveCommandOptimized})
+	 *        {@code SubsequentDriveCommand})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 * @param previous the {@code DriveCommand2} right before the new
-	 *        {@code DriveCommandOptimized}
+	 *        {@code SubsequentDriveCommand}
 	 */
-	public DriveCommandOptimized(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+	public SubsequentDriveCommand(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance, DriveCommand previous) {
@@ -72,9 +75,9 @@ public class DriveCommandOptimized extends DriveCommand {
 	}
 
 	/**
-	 * Is invoked at the commencement of this {@code DriveCommandOptimized} (i.e,
+	 * Is invoked at the commencement of this {@code SubsequentDriveCommand} (i.e,
 	 * when the scheduler begins to periodically execute this
-	 * {@code DriveCommandOptimized}).
+	 * {@code SubsequentDriveCommand}).
 	 */
 	@Override
 	public void initialize() {

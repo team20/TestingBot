@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
- * This {@code DriveCommandOld} aims to maneuver the robot to a certain
+ * This {@code DriveCommand3Controllers} aims to maneuver the robot to a certain
  * {@code Pose2d}.
  * It utilizes three {@code ProfiledPIDController}s to precisely control the
  * robot in the x, y, and yaw dimensions.
@@ -21,10 +21,10 @@ import frc.robot.subsystems.DriveSubsystem;
  * @author Jeong-Hyon Hwang (jhhbrown@gmail.com)
  * @author Andrew Hwang (u.andrew.h@gmail.com)
  */
-public class DriveCommandOld extends Command {
+public class DriveCommand3Controllers extends Command {
 
 	/**
-	 * The {@code DriveSubsystem} used by this {@code DriveCommandOld}.
+	 * The {@code DriveSubsystem} used by this {@code DriveCommand3Controllers}.
 	 */
 	private DriveSubsystem m_driveSubsystem;
 
@@ -36,7 +36,8 @@ public class DriveCommandOld extends Command {
 	/**
 	 * The {@code Supplier<Pose2d>} that provides the {@code Pose2d} to which the
 	 * robot should move.
-	 * This is used at the commencement of this {@code DriveCommandOld} (i.e.,
+	 * This is used at the commencement of this {@code DriveCommand3Controllers}
+	 * (i.e.,
 	 * when the scheduler begins to periodically execute this {@code
 	 * DriveCommand}).
 	 */
@@ -69,7 +70,8 @@ public class DriveCommandOld extends Command {
 	private Pose2d m_targetPose;
 
 	/**
-	 * Constructs a new {@code DriveCommandOld} whose purpose is to move the
+	 * Constructs a new {@code DriveCommand3Controllers} whose purpose is to move
+	 * the
 	 * robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
@@ -77,13 +79,14 @@ public class DriveCommandOld extends Command {
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 */
-	public DriveCommandOld(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
+	public DriveCommand3Controllers(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
 			double angleTolerance) {
 		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance, angleTolerance);
 	}
 
 	/**
-	 * Constructs a {@code DriveCommandOld} for moving the robot forward/backward by
+	 * Constructs a {@code DriveCommand3Controllers} for moving the robot
+	 * forward/backward by
 	 * the specified displacement.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
@@ -103,7 +106,8 @@ public class DriveCommandOld extends Command {
 	}
 
 	/**
-	 * Constructs a new {@code DriveCommandOld} whose purpose is to move the
+	 * Constructs a new {@code DriveCommand3Controllers} whose purpose is to move
+	 * the
 	 * robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
@@ -112,13 +116,13 @@ public class DriveCommandOld extends Command {
 	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
 	 *        {@code Pose2d} to which the robot should move.
 	 *        This is used at the commencement of this
-	 *        {@code DriveCommandOld} (i.e., when the scheduler
+	 *        {@code DriveCommand3Controllers} (i.e., when the scheduler
 	 *        begins to periodically execute this
-	 *        {@code DriveCommandOld})
+	 *        {@code DriveCommand3Controllers})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 */
-	public DriveCommandOld(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+	public DriveCommand3Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance) {
@@ -142,9 +146,9 @@ public class DriveCommandOld extends Command {
 	}
 
 	/**
-	 * Is invoked at the commencement of this {@code DriveCommandOld} (i.e,
+	 * Is invoked at the commencement of this {@code DriveCommand3Controllers} (i.e,
 	 * when the scheduler begins to periodically execute this
-	 * {@code DriveCommandOld}).
+	 * {@code DriveCommand3Controllers}).
 	 */
 	@Override
 	public void initialize() {
@@ -162,7 +166,7 @@ public class DriveCommandOld extends Command {
 
 	/**
 	 * Is invoked periodically by the scheduler until this
-	 * {@code DriveCommandOld} is either ended or interrupted.
+	 * {@code DriveCommand3Controllers} is either ended or interrupted.
 	 */
 	@Override
 	public void execute() {
@@ -178,9 +182,11 @@ public class DriveCommandOld extends Command {
 	}
 
 	/**
-	 * Is invoked once this {@code DriveCommandOld} is either ended or interrupted.
+	 * Is invoked once this {@code DriveCommand3Controllers} is either ended or
+	 * interrupted.
 	 * 
-	 * @param interrupted indicates if this {@code DriveCommandOld} was interrupted
+	 * @param interrupted indicates if this {@code DriveCommand3Controllers} was
+	 *        interrupted
 	 */
 	@Override
 	public void end(boolean interrupted) {
@@ -188,9 +194,9 @@ public class DriveCommandOld extends Command {
 	}
 
 	/**
-	 * Determines whether or not this {@code DriveCommandOld} needs to end.
+	 * Determines whether or not this {@code DriveCommand3Controllers} needs to end.
 	 * 
-	 * @return {@code true} if this {@code DriveCommandOld} needs to end;
+	 * @return {@code true} if this {@code DriveCommand3Controllers} needs to end;
 	 *         {@code false} otherwise
 	 */
 	@Override
@@ -212,15 +218,15 @@ public class DriveCommandOld extends Command {
 	}
 
 	/**
-	 * Returns a {@code Command} for testing the {@code DriveCommandOld}
+	 * Returns a {@code Command} for testing the {@code DriveCommand3Controllers}
 	 * implementation.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
-	 * @return a {@code Command} for testing the {@code DriveCommandOld}
+	 * @return a {@code Command} for testing the {@code DriveCommand3Controllers}
 	 *         implementation
 	 */
 	public static Command testCommand(DriveSubsystem driveSubsystem) {
-		return new DriveCommandOld(driveSubsystem, new Pose2d(.5, .5, Rotation2d.fromDegrees(30)), .1, 3)
-				.andThen(new DriveCommandOld(driveSubsystem, Pose2d.kZero, .1, 3));
+		return new DriveCommand3Controllers(driveSubsystem, new Pose2d(.5, .5, Rotation2d.fromDegrees(30)), .1, 3)
+				.andThen(new DriveCommand3Controllers(driveSubsystem, Pose2d.kZero, .1, 3));
 	}
 }

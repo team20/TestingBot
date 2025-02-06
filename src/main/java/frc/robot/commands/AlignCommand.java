@@ -40,17 +40,18 @@ public class AlignCommand {
 			double distanceTolerance,
 			double angleTolerance) {
 		// Alternative 1
-		// return new DriveCommand(driveSubsystem, () ->
+		// return new DriveCommand3Controllers(driveSubsystem, () ->
 		// poseEstimationSubsystem.getEstimatedPose(),
 		// targetPoseSupplier, distanceTolerance, angleTolerance);
 
 		// Alternative 2
-		// return new DriveCommand2(driveSubsystem, () ->
+		// return new DriveCommand(driveSubsystem, () ->
 		// poseEstimationSubsystem.getEstimatedPose(),
 		// targetPoseSupplier, distanceTolerance, angleTolerance);
 
 		// Alternative 3
-		// return new DriveCommand(driveSubsystem, () -> driveSubsystem.getPose(),
+		// return new DriveCommand3Controllers(driveSubsystem, () ->
+		// driveSubsystem.getPose(),
 		// () -> {
 		// Transform2d t =
 		// targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
@@ -58,7 +59,7 @@ public class AlignCommand {
 		// }, distanceTolerance, angleTolerance);
 
 		// Alternative 4
-		// return new DriveCommand2(driveSubsystem, () -> driveSubsystem.getPose(),
+		// return new DriveCommand(driveSubsystem, () -> driveSubsystem.getPose(),
 		// () -> {
 		// Transform2d t =
 		// targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
@@ -85,7 +86,7 @@ public class AlignCommand {
 	 *        {@code Command})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param previous the {@code DriveCommand2} right before the new
+	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code Command}
 	 * @return a new {@code Command} whose purpose is to move the
 	 *         robot to a certain target pose
@@ -95,7 +96,7 @@ public class AlignCommand {
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance, DriveCommand previous) {
-		return new DriveCommandOptimized(driveSubsystem, () -> driveSubsystem.getPose(),
+		return new SubsequentDriveCommand(driveSubsystem, () -> driveSubsystem.getPose(),
 				() -> {
 					Transform2d t = targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
 					return driveSubsystem.getPose().plus(t); // odometry-centric pose of target

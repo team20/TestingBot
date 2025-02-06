@@ -11,7 +11,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.AlignCommand;
 import frc.robot.commands.DriveCommand;
-import frc.robot.commands.DriveCommandOld;
+import frc.robot.commands.DriveCommand3Controllers;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PoseEstimationSubsystem;
 
@@ -33,7 +33,7 @@ public class CommandComposer {
 	public static Command testSubsystemsAndCommands() {
 		return sequence(
 				m_driveSubsystem.testCommand(), // F, B, SL, SR, RL, RR
-				DriveCommandOld.testCommand(m_driveSubsystem).withTimeout(2),
+				DriveCommand3Controllers.testCommand(m_driveSubsystem).withTimeout(2),
 				DriveCommand.testCommand(m_driveSubsystem).withTimeout(2));
 	}
 
@@ -70,9 +70,9 @@ public class CommandComposer {
 	public static Command moveForwardBackward3Controllers(double distanceInFeet, double distanceTolerance,
 			double angleTolerance) {
 		return sequence(
-				DriveCommandOld
+				DriveCommand3Controllers
 						.moveForward(m_driveSubsystem, 0.0254 * 12 * distanceInFeet, distanceTolerance, angleTolerance),
-				DriveCommandOld
+				DriveCommand3Controllers
 						.moveForward(
 								m_driveSubsystem, -0.0254 * 12 * distanceInFeet, distanceTolerance, angleTolerance));
 	}
