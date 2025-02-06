@@ -174,14 +174,14 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Calculates the {@code ChassisSpeeds} to move the robot towards the closest
+	 * Calculates the {@code ChassisSpeeds} to move the robot toward the closest
 	 * {@code AprilTag}.
 	 * 
 	 * @param robotToTag the {@code Tranform2d} representing the pose of the
 	 *        {@code AprilTag} relative to the robot when the robot is aligned
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
 	 *        which {@code AprilTag}s are considered
-	 * @return the calculated {@code ChassisSpeeds} to move the robot towards the
+	 * @return the calculated {@code ChassisSpeeds} to move the robot toward the
 	 *         closest {@code AprilTag}
 	 */
 	public ChassisSpeeds chassisSpeedsTowardClosestTag(Transform2d robotToTag, double distanceThresholdInMeters) {
@@ -195,7 +195,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
 	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
-	 * towards the target {@code Pose2d}.
+	 * toward the target {@code Pose2d}.
 	 * 
 	 * @param currentPose the current {@code Pose2d}
 	 * @param targetPose the target {@code Pose2d}
@@ -206,7 +206,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 *        the yaw dimension in degrees (input: error in degrees, output:
 	 *        velocity in radians per second)
 	 * @return the calculated {@code ChassisSpeeds} to move from the current
-	 *         {@code Pose2d} towards the target {@code Pose2d}
+	 *         {@code Pose2d} toward the target {@code Pose2d}
 	 */
 	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController contollerXY,
 			PIDController controllerYaw) {
@@ -444,9 +444,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public static double translationalDisplacement(Pose2d initial, Pose2d last) {
 		var t = last.getTranslation().minus(initial.getTranslation());
-		return Math.abs(t.getAngle().minus(initial.getRotation()).getDegrees()) > 90
-				? -t.getNorm()
-				: t.getNorm();
+		return Math.abs(t.getAngle().minus(initial.getRotation()).getDegrees()) > 90 ? -t.getNorm() : t.getNorm();
 	}
 
 	/**

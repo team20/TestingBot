@@ -146,15 +146,32 @@ public class Robot extends TimedRobot {
 		// robotToTarget, 12, 15, 14, 16, 17, 18, 19, 20, 21, 22));
 	}
 
+	/**
+	 * Creates a {@code Command} to automatically align the robot to the closest
+	 * {@code AprilTag} while driving the robot with joystick input.
+	 *
+	 * @param forwardSpeed forward speed supplier. Positive values make the robot
+	 *        go forward (+X direction).
+	 * @param strafeSpeed strafe speed supplier. Positive values make the robot
+	 *        go to the left (+Y direction).
+	 * @param rotation rotation speed supplier. Positive values make the
+	 *        robot rotate CCW.
+	 * @param robotToTag the {@code Tranform2d} representing the pose of the
+	 *        closest {@code AprilTag} relative to the robot when the robot is
+	 *        aligned
+	 * @param isFieldRelative {@code Supplier} for determining whether or not
+	 *        driving should be field relative.
+	 * @return a {@code Command} to automatically align the robot to the closest tag
+	 *         while driving the robot with joystick input
+	 */
 	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier rotation, Transform2d robotToTarget, double distanceThresholdInMeters) {
+			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters) {
 
 		return run(() -> {
 			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
-			speeds = speeds
-					.plus(
-							m_poseEstimationSubystem
-									.chassisSpeedsTowardClosestTag(robotToTarget, distanceThresholdInMeters));
+			speeds = speeds.plus(
+					m_poseEstimationSubystem
+							.chassisSpeedsTowardClosestTag(robotToTag, distanceThresholdInMeters));
 			m_driveSubsystem.drive(speeds, true);
 		});
 	}
