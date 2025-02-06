@@ -73,24 +73,18 @@ public class Robot extends TimedRobot {
 				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		m_autoSelector.addOption(
 				"Move around the Red Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+				CommandComposer.visitTagsOptimized(0.03, 3, 20, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_autoSelector.addOption(
 				"Move around the Blue Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
-		m_autoSelector.addOption(
-				"Move around the Red Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
-		m_autoSelector.addOption(
-				"Move around the Blue Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+				CommandComposer.visitTagsOptimized(0.03, 3, 20, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		m_autoSelector.addOption(
 				"Move around the Red Reef (Complex)",
 				CommandComposer.visitTags(
-						0.03, 3, transform(1.2, 0, 180), transform(0.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+						0.03, 3, 20, transform(1.2, 0, 180), transform(0.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_autoSelector.addOption(
 				"Move around the Blue Reef (Complex)",
 				CommandComposer.visitTags(
-						0.03, 3, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+						0.03, 3, 20, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		SmartDashboard.putData(m_autoSelector);
 
 		SmartDashboard.putData(m_pdh);

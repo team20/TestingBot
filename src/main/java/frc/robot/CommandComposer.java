@@ -4,9 +4,9 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.*;
 
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.AlignCommand;
@@ -44,7 +44,7 @@ public class CommandComposer {
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 * 
-	 * @return a {@code Command} for moving 6 feet forward and then backward.
+	 * @return a {@code Command} for moving forward and then backward.
 	 */
 	public static Command moveForwardBackward(double distanceInFeet, double distanceTolerance,
 			double angleTolerance) {
@@ -89,14 +89,12 @@ public class CommandComposer {
 	 */
 	public static Command visitTags(double distanceTolerance, double angleTolerance, Transform2d robotToTag,
 			int... tagIDs) {
-		List<DriveCommand> commands = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
-				.filter(p -> p.isPresent())
-				.map(p -> p.get())
-				.map(p -> p.toPose2d().plus(robotToTag)).map(
-						p -> AlignCommand
-								.moveTo(
-										m_driveSubsystem, m_poseEstimationSubsystem, p, distanceTolerance,
-										angleTolerance))
+		Pose2d[] poses = PoseEstimationSubsystem.tagPoses(tagIDs);
+		var commands = Arrays.stream(poses).map(
+				p -> AlignCommand
+						.moveTo(
+								m_driveSubsystem, m_poseEstimationSubsystem, p.plus(robotToTag), distanceTolerance,
+								angleTolerance))
 				.toList();
 		return sequence(commands.toArray(new Command[0]));
 	}
@@ -106,32 +104,21 @@ public class CommandComposer {
 	 * 
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param intermediateToleranceRatio the ratio of distance and angle tolerances
+	 *        at intermediate {@code AprilTags} for faster movements
 	 * @param robotToTag the {@code Tranform2d} representing the pose of the
 	 *        {@code AprilTag} relative to the robot when the robot is aligned
 	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * @return a {@code Command} for visiting all the specified {@code AprilTag}s
 	 */
-	public static Command visitTagsOptimized(double distanceTolerance, double angleTolerance, Transform2d robotToTarget,
+	public static Command visitTagsOptimized(double distanceTolerance, double angleTolerance,
+			double intermediateToleranceRatio, Transform2d robotToTag,
 			int... tagIDs) {
-		var l = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
-				.filter(p -> p.isPresent())
-				.map(p -> p.get())
-				.map(p -> p.toPose2d().plus(robotToTarget)).toList();
-		List<Command> commands = new LinkedList<Command>();
-		DriveCommand previous = null;
-		for (var p : l) {
-			boolean last = p == l.get(l.size() - 1);
-			DriveCommand c = previous == null ? AlignCommand.moveTo(
-					m_driveSubsystem, m_poseEstimationSubsystem, p, last ? distanceTolerance : 3 * distanceTolerance,
-					last ? angleTolerance : 3 * angleTolerance)
-					: AlignCommand.moveTo(
-							m_driveSubsystem, m_poseEstimationSubsystem, p,
-							last ? distanceTolerance : 3 * distanceTolerance,
-							last ? angleTolerance : 3 * angleTolerance, previous);
-			commands.add(c);
-			previous = c;
-		}
-		return sequence(commands.toArray(new Command[0]));
+		var poses = PoseEstimationSubsystem.tagPoses(tagIDs);
+		poses = Arrays.stream(poses).map(p -> p.plus(robotToTag)).toList().toArray(new Pose2d[0]);
+		return AlignCommand.follow(
+				m_driveSubsystem, m_poseEstimationSubsystem, distanceTolerance, angleTolerance,
+				intermediateToleranceRatio, poses);
 	}
 
 	/**
@@ -148,16 +135,17 @@ public class CommandComposer {
 	 *        (2nd step)
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param intermediateToleranceRatio the ratio of distance and angle tolerances
+	 *        at intermediate {@code AprilTags} for faster movements
 	 * @return a {@code Command} for moving to the specified {@code AprilTag} in two
 	 *         steps.
 	 */
 	public static Command moveToTag(int tagID, Transform2d robotToTagReady, Transform2d robotToTag,
-			double distanceTolerance,
-			double angleTolerance) {
+			double distanceTolerance, double angleTolerance, double intermediateToleranceRatio) {
 		DriveCommand c1 = AlignCommand.moveTo(
 				m_driveSubsystem, m_poseEstimationSubsystem,
 				kFieldLayout.getTagPose(tagID).get().toPose2d().plus(robotToTagReady),
-				distanceTolerance, angleTolerance);
+				distanceTolerance * intermediateToleranceRatio, angleTolerance * intermediateToleranceRatio);
 		DriveCommand c2 = AlignCommand.moveTo(
 				m_driveSubsystem, m_poseEstimationSubsystem,
 				kFieldLayout.getTagPose(tagID).get().toPose2d().plus(robotToTag),
@@ -166,7 +154,8 @@ public class CommandComposer {
 				c1, c2, AlignCommand.moveTo(
 						m_driveSubsystem, m_poseEstimationSubsystem,
 						kFieldLayout.getTagPose(tagID).get().toPose2d().plus(robotToTagReady),
-						distanceTolerance, angleTolerance, c2));
+						distanceTolerance * intermediateToleranceRatio, angleTolerance * intermediateToleranceRatio,
+						c2));
 	}
 
 	/**
@@ -174,6 +163,8 @@ public class CommandComposer {
 	 * 
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param intermediateToleranceRatio the ratio of distance and angle tolerances
+	 *        at intermediate {@code AprilTags} for faster movements
 	 * @param robotToTagReady the {@code Tranform2d} representing the pose of the
 	 *        {@code AprilTag} relative to the robot when the robot is tentatively
 	 *        aligned (1st step)
@@ -183,11 +174,15 @@ public class CommandComposer {
 	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * @return a {@code Command} for visiting all the specified {@code AprilTag}s
 	 */
-	public static Command visitTags(double distanceTolerance, double angleTolerance, Transform2d robotToTagReady,
+	public static Command visitTags(double distanceTolerance, double angleTolerance, double intermediateToleranceRatio,
+			Transform2d robotToTagReady,
 			Transform2d robotToTag,
 			int... tagIDs) {
 		List<Command> commands = Arrays.stream(tagIDs)
-				.mapToObj(i -> moveToTag(i, robotToTagReady, robotToTag, distanceTolerance, angleTolerance))
+				.mapToObj(
+						i -> moveToTag(
+								i, robotToTagReady, robotToTag, distanceTolerance, angleTolerance,
+								intermediateToleranceRatio))
 				.toList();
 		return sequence(commands.toArray(new Command[0]));
 	}

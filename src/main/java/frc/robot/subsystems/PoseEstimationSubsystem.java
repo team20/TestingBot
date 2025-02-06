@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static frc.robot.Constants.*;
 import static frc.robot.Constants.DriveConstants.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -520,6 +521,19 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public static Rotation2d rotation(double angleInDegrees) {
 		return Rotation2d.fromDegrees(angleInDegrees);
+	}
+
+	/**
+	 * Returns the {@code Pose2d}s of the specified {@code AprilTag}s.
+	 * 
+	 * @param tagIDs the IDs of the {@code AprilTag}s
+	 * @return the {@code Pose2d}s of the specified {@code AprilTag}s
+	 */
+	public static Pose2d[] tagPoses(int... tagIDs) {
+		return Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
+				.filter(p -> p.isPresent())
+				.map(p -> p.get())
+				.map(p -> p.toPose2d()).toList().toArray(new Pose2d[0]);
 	}
 
 }

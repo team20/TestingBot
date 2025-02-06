@@ -63,6 +63,16 @@ public class DriveCommand extends Command {
 	protected Pose2d m_targetPose;
 
 	/**
+	 * The distance error in meters which is tolerable.
+	 */
+	protected double m_distanceTolerance;
+
+	/**
+	 * The angle error in degrees which is tolerable.
+	 */
+	protected double m_angleTolerance;
+
+	/**
 	 * Constructs a new {@code DriveCommand} whose purpose is to move the
 	 * robot to a certain {@code Pose2d}.
 	 * 
@@ -123,8 +133,6 @@ public class DriveCommand extends Command {
 						new TrapezoidProfile.Constraints(Math.toDegrees(kTurnMaxAngularSpeed),
 								Math.toDegrees(kTurnMaxAcceleration))));
 		m_controllerYaw.enableContinuousInput(-180, 180);
-		m_controllerXY.setTolerance(distanceTolerance);
-		m_controllerYaw.setTolerance(angleTolerance);
 		m_controllerXY.setGoal(0);
 		m_controllerYaw.setGoal(0);
 	}
@@ -157,6 +165,8 @@ public class DriveCommand extends Command {
 		m_driveSubsystem = driveSubsystem;
 		m_poseSupplier = poseSupplier;
 		m_targetPoseSupplier = targetPoseSupplier;
+		m_distanceTolerance = distanceTolerance;
+		m_angleTolerance = angleTolerance;
 		m_controllerXY = controllerXY;
 		m_controllerYaw = controllerYaw;
 		addRequirements(m_driveSubsystem);
@@ -178,6 +188,8 @@ public class DriveCommand extends Command {
 		}
 		m_controllerXY.reset(m_targetPose.getTranslation().minus(pose.getTranslation()).getNorm());
 		m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+		m_controllerXY.setTolerance(m_distanceTolerance);
+		m_controllerYaw.setTolerance(m_angleTolerance);
 	}
 
 	/**

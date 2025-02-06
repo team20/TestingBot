@@ -1,5 +1,9 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.wpilibj2.command.Commands.*;
+
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -104,6 +108,38 @@ public class AlignCommand {
 	}
 
 	/**
+	 * Constructs a {@code Command} for following the specified path.
+	 * 
+	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseEstimationSubsystem the {@code PoseEstimationSubsystem} to use
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param intermediateToleranceRatio the ratio of distance and angle tolerances
+	 *        at intermediate {@code Pose2d}s for faster movements
+	 * @param poses the {@code Pose2d}s that constitute the path
+	 * @return a {@code Command} for following the specified path
+	 */
+	public static Command follow(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubsystem,
+			double distanceTolerance, double angleTolerance, double intermediateToleranceRatio, Pose2d[] poses) {
+		List<Command> commands = new LinkedList<Command>();
+		DriveCommand previous = null;
+		for (var p : poses) {
+			boolean last = p == poses[poses.length - 1];
+			DriveCommand c = previous == null ? AlignCommand.moveTo(
+					driveSubsystem, poseEstimationSubsystem, p,
+					last ? distanceTolerance : intermediateToleranceRatio * distanceTolerance,
+					last ? angleTolerance : intermediateToleranceRatio * angleTolerance)
+					: AlignCommand.moveTo(
+							driveSubsystem, poseEstimationSubsystem, p,
+							last ? distanceTolerance : intermediateToleranceRatio * distanceTolerance,
+							last ? angleTolerance : intermediateToleranceRatio * angleTolerance, previous);
+			commands.add(c);
+			previous = c;
+		}
+		return sequence(commands.toArray(new Command[0]));
+	}
+
+	/**
 	 * Constructs a {@code Command} for moving the robot to the specified
 	 * target.
 	 * 
@@ -130,7 +166,7 @@ public class AlignCommand {
 	 * @param targetPose the field-centric {@code Pose2d} of the target
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param previous the {@code DriveCommand2} right before the new
+	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code Command}
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
@@ -179,7 +215,7 @@ public class AlignCommand {
 	 *        {@code Command})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param previous the {@code DriveCommand2} right before the new
+	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code Command}
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target

@@ -20,16 +20,6 @@ import frc.robot.subsystems.DriveSubsystem;
 public class SubsequentDriveCommand extends DriveCommand {
 
 	/**
-	 * The distance error in meters which is tolerable.
-	 */
-	private double m_distanceTolerance;
-
-	/**
-	 * The angle error in degrees which is tolerable.
-	 */
-	private double m_angleTolerance;
-
-	/**
 	 * Constructs a new {@code SubsequentDriveCommand} whose purpose is to move the
 	 * robot to a certain {@code Pose2d}.
 	 * 
@@ -37,7 +27,7 @@ public class SubsequentDriveCommand extends DriveCommand {
 	 * @param targetPose the {@code Pose2d} to which the robot needs to move
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param previous the {@code DriveCommand2} right before the new
+	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code SubsequentDriveCommand}
 	 */
 	public SubsequentDriveCommand(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
@@ -61,7 +51,7 @@ public class SubsequentDriveCommand extends DriveCommand {
 	 *        {@code SubsequentDriveCommand})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param previous the {@code DriveCommand2} right before the new
+	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code SubsequentDriveCommand}
 	 */
 	public SubsequentDriveCommand(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
@@ -70,8 +60,6 @@ public class SubsequentDriveCommand extends DriveCommand {
 			double angleTolerance, DriveCommand previous) {
 		super(driveSubsystem, poseSupplier, targetPoseSupplier, distanceTolerance, angleTolerance,
 				previous.m_controllerXY, previous.m_controllerYaw);
-		m_distanceTolerance = distanceTolerance;
-		m_angleTolerance = angleTolerance;
 	}
 
 	/**
