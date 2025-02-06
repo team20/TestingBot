@@ -35,7 +35,7 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.ControllerConstants.Button;
 import frc.robot.commands.AlignCommand;
 import frc.robot.commands.DriveCommand;
-import frc.robot.commands.DriveCommand2;
+import frc.robot.commands.DriveCommandOld;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -174,7 +174,7 @@ public class Robot extends TimedRobot {
 
 	Command tourCommand(DriveSubsystem driveSubsystem, PoseEstimationSubsystem poseEstimationSubystem,
 			double distanceTolerance, double angleTolerance, Transform2d robotToTarget, int... tagIDs) {
-		List<DriveCommand2> commands = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
+		List<DriveCommand> commands = Arrays.stream(tagIDs).mapToObj(i -> kFieldLayout.getTagPose(i))
 				.filter(p -> p.isPresent())
 				.map(p -> p.get())
 				.map(p -> p.toPose2d().plus(robotToTarget)).map(
@@ -193,10 +193,10 @@ public class Robot extends TimedRobot {
 				.map(p -> p.get())
 				.map(p -> p.toPose2d().plus(robotToTarget)).toList();
 		List<Command> commands = new LinkedList<Command>();
-		DriveCommand2 previous = null;
+		DriveCommand previous = null;
 		for (var p : l) {
 			boolean last = p == l.get(l.size() - 1);
-			DriveCommand2 c = previous == null ? AlignCommand.moveTo(
+			DriveCommand c = previous == null ? AlignCommand.moveTo(
 					driveSubsystem, poseEstimationSubystem, p, last ? distanceTolerance : 3 * distanceTolerance,
 					last ? angleTolerance : 3 * angleTolerance)
 					: AlignCommand.moveTo(
@@ -262,8 +262,8 @@ public class Robot extends TimedRobot {
 		CommandScheduler.getInstance().cancelAll();
 		sequence(
 				m_driveSubsystem.testCommand(), // F, B, SL, SR, RL, RR
-				DriveCommand.testCommand(m_driveSubsystem).withTimeout(2),
-				DriveCommand2.testCommand(m_driveSubsystem).withTimeout(2))
+				DriveCommandOld.testCommand(m_driveSubsystem).withTimeout(2),
+				DriveCommand.testCommand(m_driveSubsystem).withTimeout(2))
 						.schedule();
 	}
 

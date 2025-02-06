@@ -34,7 +34,7 @@ public class AlignCommand {
 	 * @return a new {@code Command} whose purpose is to move the
 	 *         robot to a certain target pose
 	 */
-	public static DriveCommand2 driveCommand(DriveSubsystem driveSubsystem,
+	public static DriveCommand driveCommand(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
@@ -64,7 +64,7 @@ public class AlignCommand {
 		// targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
 		// return driveSubsystem.getPose().plus(t); // odometry-centric pose of target
 		// }, distanceTolerance, angleTolerance);
-		return new DriveCommand2(driveSubsystem, () -> driveSubsystem.getPose(),
+		return new DriveCommand(driveSubsystem, () -> driveSubsystem.getPose(),
 				() -> {
 					Transform2d t = targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
 					return driveSubsystem.getPose().plus(t); // odometry-centric pose of target
@@ -90,12 +90,12 @@ public class AlignCommand {
 	 * @return a new {@code Command} whose purpose is to move the
 	 *         robot to a certain target pose
 	 */
-	public static DriveCommand2 driveCommand(DriveSubsystem driveSubsystem,
+	public static DriveCommand driveCommand(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
-			double angleTolerance, DriveCommand2 previous) {
-		return new DriveCommand2Optimized(driveSubsystem, () -> driveSubsystem.getPose(),
+			double angleTolerance, DriveCommand previous) {
+		return new DriveCommandOptimized(driveSubsystem, () -> driveSubsystem.getPose(),
 				() -> {
 					Transform2d t = targetPoseSupplier.get().minus(poseEstimationSubsystem.getEstimatedPose());
 					return driveSubsystem.getPose().plus(t); // odometry-centric pose of target
@@ -114,7 +114,7 @@ public class AlignCommand {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
+	public static DriveCommand moveTo(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Pose2d targetPose, double distanceTolerance, double angleTolerance) {
 		return moveTo(driveSubsystem, poseEstimationSubsystem, () -> targetPose, distanceTolerance, angleTolerance);
@@ -134,9 +134,9 @@ public class AlignCommand {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
+	public static DriveCommand moveTo(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
-			Pose2d targetPose, double distanceTolerance, double angleTolerance, DriveCommand2 previous) {
+			Pose2d targetPose, double distanceTolerance, double angleTolerance, DriveCommand previous) {
 		return moveTo(
 				driveSubsystem, poseEstimationSubsystem, () -> targetPose, distanceTolerance, angleTolerance, previous);
 	}
@@ -157,7 +157,7 @@ public class AlignCommand {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
+	public static DriveCommand moveTo(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance) {
 		return driveCommand(
@@ -183,10 +183,10 @@ public class AlignCommand {
 	 * @return a {@code Commmand} for moving the robot to the specified
 	 *         target
 	 */
-	public static DriveCommand2 moveTo(DriveSubsystem driveSubsystem,
+	public static DriveCommand moveTo(DriveSubsystem driveSubsystem,
 			PoseEstimationSubsystem poseEstimationSubsystem,
 			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleTolerance,
-			DriveCommand2 previous) {
+			DriveCommand previous) {
 		return driveCommand(
 				driveSubsystem, poseEstimationSubsystem, targetPoseSupplier,
 				distanceTolerance, angleTolerance, previous);

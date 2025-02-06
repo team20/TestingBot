@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -16,6 +17,7 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -208,20 +210,76 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController contollerXY,
 			PIDController controllerYaw) {
+		return chassisSpeeds(currentPose, targetPose, d -> contollerXY.calculate(d), a -> controllerYaw.calculate(a));
+	}
+
+	/**
+	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
+	 * towards the target {@code Pose2d}.
+	 * 
+	 * @param currentPose the current {@code Pose2d}
+	 * @param targetPose the target {@code Pose2d}
+	 * @param contollerXY the {@code ProfiledPIDController} for controlling the
+	 *        robot in the x and y dimensions in meters (input: error in meters,
+	 *        output: velocity in meters per second)
+	 * @param controllerYaw the {@code ProfiledPIDController} for controlling the
+	 *        robot in the yaw dimension in degrees (input: error in degrees,
+	 *        output: velocity in radians per second)
+	 * @return the calculated {@code ChassisSpeeds} to move from the current
+	 *         {@code Pose2d} towards the target {@code Pose2d}
+	 */
+	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose,
+			ProfiledPIDController contollerXY, ProfiledPIDController controllerYaw) {
+		return chassisSpeeds(currentPose, targetPose, d -> contollerXY.calculate(d), a -> controllerYaw.calculate(a));
+	}
+
+	/**
+	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
+	 * towards the target {@code Pose2d}.
+	 * 
+	 * @param currentPose the current {@code Pose2d}
+	 * @param targetPose the target {@code Pose2d}
+	 * @param contollerXY the {@code Function<Double, Double>} for controlling the
+	 *        robot in the x and y dimensions in meters (input: error in meters,
+	 *        output: velocity in meters per second)
+	 * @param controllerYaw the {@code Function<Double, Double>} for controlling the
+	 *        robot in the yaw dimension in degrees (input: error in degrees,
+	 *        output: velocity in radians per second)
+	 * @return the calculated {@code ChassisSpeeds} to move from the current
+	 *         {@code Pose2d} towards the target {@code Pose2d}
+	 */
+	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose,
+			Function<Double, Double> contollerXY, Function<Double, Double> controllerYaw) {
 		Translation2d translationalDisplacement = targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
 		double distance = translationalDisplacement.getNorm();
 		if (distance > 0) {
-			// calculate(double) returns a non-positive value (setpoint: 0)
-			double speed = -contollerXY.calculate(distance);
+			// apply(double) returns a non-positive value (setpoint: 0)
+			double speed = -contollerXY.apply(distance);
 			velocityX = speed * translationalDisplacement.getAngle().getCos();
 			velocityY = speed * translationalDisplacement.getAngle().getSin();
 		}
 		Rotation2d angularDisplacement = targetPose.getRotation().minus(currentPose.getRotation());
-		// calculate(double) returns a non-positive value (setpoint: 0)
-		double angularVelocityRadiansPerSecond = -controllerYaw.calculate(angularDisplacement.getDegrees());
+		// apply(double) returns a non-positive value (setpoint: 0)
+		double angularVelocityRadiansPerSecond = -controllerYaw.apply(angularDisplacement.getDegrees());
+		velocityX = applyThreshold(velocityX, kDriveMinSpeed);
+		velocityY = applyThreshold(velocityY, kDriveMinSpeed);
+		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
+	}
+
+	/**
+	 * Applies the specified threshold to the specified value.
+	 * 
+	 * @param value the value to be thresholded
+	 * @param threshold the threshold limit
+	 * @return the original value if the absolute value of that value is greater or
+	 *         equal to the threshold; the threshold with the original value's sign
+	 *         otherwise
+	 */
+	public static double applyThreshold(double value, double threshold) {
+		return Math.abs(value) < threshold ? Math.signum(value) * threshold : value;
 	}
 
 	/**
