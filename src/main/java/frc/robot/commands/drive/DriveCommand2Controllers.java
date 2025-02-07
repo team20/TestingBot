@@ -1,4 +1,4 @@
-package frc.robot.commands;
+package frc.robot.commands.drive;
 
 import static frc.robot.Constants.DriveConstants.*;
 
@@ -22,7 +22,7 @@ import frc.robot.subsystems.PoseEstimationSubsystem;
  * @author Jeong-Hyon Hwang (jhhbrown@gmail.com)
  * @author Andrew Hwang (u.andrew.h@gmail.com)
  */
-public class DriveCommand extends Command {
+public class DriveCommand2Controllers extends Command {
 
 	/**
 	 * The {@code DriveSubsystem} used by this {@code DriveCommand}.
@@ -81,7 +81,7 @@ public class DriveCommand extends Command {
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
+	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
 			double angleTolerance) {
 		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance, angleTolerance);
 	}
@@ -98,9 +98,9 @@ public class DriveCommand extends Command {
 	 * @return a {@code DriveCommand} for moving the robot to the specified
 	 *         target
 	 */
-	public static DriveCommand moveForward(DriveSubsystem driveSubsystem, double translationalDisplacement,
+	public static DriveCommand2Controllers moveForward(DriveSubsystem driveSubsystem, double translationalDisplacement,
 			double distanceTolerance, double angleTolerance) {
-		return new DriveCommand(driveSubsystem, () -> driveSubsystem.getPose(), () -> {
+		return new DriveCommand2Controllers(driveSubsystem, () -> driveSubsystem.getPose(), () -> {
 			var transform = new Transform2d(translationalDisplacement, 0, Rotation2d.kZero);
 			return driveSubsystem.getPose().plus(transform);
 		}, distanceTolerance, angleTolerance);
@@ -122,7 +122,7 @@ public class DriveCommand extends Command {
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance) {
@@ -158,7 +158,7 @@ public class DriveCommand extends Command {
 	 *        robot in the yaw dimension in angles
 	 * 
 	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
 			double angleTolerance, ProfiledPIDController controllerXY, ProfiledPIDController controllerYaw) {
@@ -186,10 +186,10 @@ public class DriveCommand extends Command {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		m_controllerXY.reset(m_targetPose.getTranslation().minus(pose.getTranslation()).getNorm());
-		m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
 		m_controllerXY.setTolerance(m_distanceTolerance);
 		m_controllerYaw.setTolerance(m_angleTolerance);
+		m_controllerXY.reset(m_targetPose.getTranslation().minus(pose.getTranslation()).getNorm());
+		m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
 	}
 
 	/**
@@ -246,7 +246,7 @@ public class DriveCommand extends Command {
 	 *         implementation
 	 */
 	public static Command testCommand(DriveSubsystem driveSubsystem) {
-		return new DriveCommand(driveSubsystem, new Pose2d(.5, .5, Rotation2d.fromDegrees(30)), .1, 3)
-				.andThen(new DriveCommand(driveSubsystem, Pose2d.kZero, .1, 3));
+		return new DriveCommand2Controllers(driveSubsystem, new Pose2d(.5, .5, Rotation2d.fromDegrees(30)), .1, 3)
+				.andThen(new DriveCommand2Controllers(driveSubsystem, Pose2d.kZero, .1, 3));
 	}
 }

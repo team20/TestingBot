@@ -77,7 +77,7 @@ public class Constants {
 		public static final double kDriveMaxVoltage = 12;
 
 		public static final double kDriveGearRatio = 6.12;
-		public static final double kSteerGearRatio = 150.0 / 7;
+		public static final double kSteerGearRatio = 150.0 / 7; // TODO: find a good value
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 

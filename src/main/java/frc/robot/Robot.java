@@ -60,8 +60,8 @@ public class Robot extends TimedRobot {
 		CommandComposer.setSubsystems(m_driveSubsystem, m_poseEstimationSubsystem);
 		m_autoSelector.addOption("Test Subsystems and Commands", CommandComposer.testSubsystemsAndCommands());
 		m_autoSelector.addOption(
-				"Move 6 Feet Forward and then Backward",
-				CommandComposer.moveForwardBackward(6, 0.03, 3));
+				"Move 6 Feet Forward and then Backward (using 2 PID Controllers)",
+				CommandComposer.moveForwardBackward2Controllers(6, 0.03, 3));
 		m_autoSelector.addOption(
 				"Move 6 Feet Forward and then Backward (using 3 PID Controllers)",
 				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));

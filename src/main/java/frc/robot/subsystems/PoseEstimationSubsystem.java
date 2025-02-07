@@ -259,14 +259,13 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		if (distance > 0) {
 			// apply(double) returns a non-positive value (setpoint: 0)
 			double speed = -contollerXY.apply(distance);
+			speed = applyThreshold(speed, kDriveMinSpeed);
 			velocityX = speed * translationalDisplacement.getAngle().getCos();
 			velocityY = speed * translationalDisplacement.getAngle().getSin();
 		}
 		Rotation2d angularDisplacement = targetPose.getRotation().minus(currentPose.getRotation());
 		// apply(double) returns a non-positive value (setpoint: 0)
 		double angularVelocityRadiansPerSecond = -controllerYaw.apply(angularDisplacement.getDegrees());
-		velocityX = applyThreshold(velocityX, kDriveMinSpeed);
-		velocityY = applyThreshold(velocityY, kDriveMinSpeed);
 		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}
