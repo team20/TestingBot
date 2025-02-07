@@ -114,11 +114,8 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				.getStructTopic("/SmartDashboard/Pose@PoseEstimationSubsystem", Pose2d.struct)
 				.publish();
 		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
-		m_controllerXY.setSetpoint(0);
-
 		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
 		m_controllerYaw.enableContinuousInput(-180, 180);
-		m_controllerYaw.setSetpoint(0);
 	}
 
 	/**
@@ -148,7 +145,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 			var poseEstimator = e.getValue();
 			for (var r : camera.getAllUnreadResults()) { // for every result r
 				if (firstCamera || r.getTargets().size() > 1) {
-					Optional<EstimatedRobotPose> p = poseEstimator.update(r); // assign estimated pose to e
+					Optional<EstimatedRobotPose> p = poseEstimator.update(r);
 					if (p.isPresent()) { // if successful
 						EstimatedRobotPose v = p.get(); // get successfully estimated pose
 						m_poseEstimator.addVisionMeasurement(v.estimatedPose.toPose2d(), v.timestampSeconds);
@@ -213,14 +210,12 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		double velocityX = 0, velocityY = 0;
 		double distance = translationalDisplacement.getNorm();
 		if (distance > 0) {
-			// calculate(double) returns a non-positive value (setpoint: 0)
-			double speed = -contollerXY.calculate(distance);
+			double speed = contollerXY.calculate(0, distance);
 			velocityX = speed * translationalDisplacement.getAngle().getCos();
 			velocityY = speed * translationalDisplacement.getAngle().getSin();
 		}
-		Rotation2d angularDisplacement = targetPose.getRotation().minus(currentPose.getRotation());
-		// calculate(double) returns a non-positive value (setpoint: 0)
-		double angularVelocityRadiansPerSecond = -controllerYaw.calculate(angularDisplacement.getDegrees());
+		double angularVelocityRadiansPerSecond = controllerYaw
+				.calculate(currentPose.getRotation().getDegrees(), targetPose.getRotation().getDegrees());
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}
 
