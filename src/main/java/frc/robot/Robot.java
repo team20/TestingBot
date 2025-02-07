@@ -67,16 +67,28 @@ public class Robot extends TimedRobot {
 				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
 		m_autoSelector.addOption(
 				"Move around the Red Reef",
-				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+				CommandComposer.visitTags(0.03, 3, 0, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_autoSelector.addOption(
 				"Move around the Blue Reef",
-				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+				CommandComposer.visitTags(0.03, 3, 0, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+		m_autoSelector.addOption(
+				"Move around the Red Reef (Refined)",
+				CommandComposer.visitTags(0.03, 3, 2, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+		m_autoSelector.addOption(
+				"Move around the Blue Reef (Refined)",
+				CommandComposer.visitTags(0.03, 3, 2, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		m_autoSelector.addOption(
 				"Move around the Red Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, 20, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+				CommandComposer.visitTagsOptimized(0.03, 3, 5, 0, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_autoSelector.addOption(
 				"Move around the Blue Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, 20, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+				CommandComposer.visitTagsOptimized(0.03, 3, 5, 0, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+		m_autoSelector.addOption(
+				"Move around the Red Reef (Faster, Refined)",
+				CommandComposer.visitTagsOptimized(0.03, 3, 5, 2, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+		m_autoSelector.addOption(
+				"Move around the Blue Reef (Faster, Refined)",
+				CommandComposer.visitTagsOptimized(0.03, 3, 5, 2, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		m_autoSelector.addOption(
 				"Move around the Red Reef (Complex)",
 				CommandComposer.visitTags(

@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static frc.robot.Constants.*;
 import static frc.robot.Constants.DriveConstants.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -488,6 +489,17 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Constructs a {@code Translation2d}.
+	 * 
+	 * @param x the x component of the {@code Translation2d}
+	 * @param y the y component of the {@code Translation2d}
+	 * @return the constructed {@code Translation2d}
+	 */
+	public static Translation2d translation(double x, double y) {
+		return new Translation2d(x, y);
+	}
+
+	/**
 	 * Constructs a {@code Pose2d}.
 	 * 
 	 * @param x the x component of the {@code Pose2d}
@@ -534,6 +546,120 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				.filter(p -> p.isPresent())
 				.map(p -> p.get())
 				.map(p -> p.toPose2d()).toList().toArray(new Pose2d[0]);
+	}
+
+	/**
+	 * Adds intermediate {@code Pose2d}s to the specified path to make the path
+	 * smoother.
+	 * 
+	 * @param path the {@code Pose2d}s constituting the path
+	 * @return the {@code Pose2d}s in the resulting (i.e., refined) path
+	 */
+	public static Pose2d[] refine(Pose2d... path) {
+		var l = new ArrayList<Pose2d>();
+		for (int i = 0; i < path.length - 1; i++)
+			l.add(
+					intermediate(
+							i - 1 < 0 ? null : path[i - 1], path[i], path[i + 1],
+							i + 2 >= path.length ? null : path[i + 2]));
+		for (int i = 0; i < path.length; i++)
+			l.add(2 * i, path[i]);
+		return l.toArray(new Pose2d[0]);
+	}
+
+	/**
+	 * Calculates an intermediate {@code Pose2d} given the specified
+	 * {@code Pose2d}s.
+	 * 
+	 * @param previousPrevious the {@code Pose2d} right before the previous
+	 *        {@code Pose2d}
+	 * @param previous the previous {@code Pose2d}
+	 * @param next the next {@code Pose2d}
+	 * @param nextNext the {@code Pose2d} right after the next {@code Pose2d}
+	 * @return
+	 */
+	private static Pose2d intermediate(Pose2d previousPrevious, Pose2d previous, Pose2d next, Pose2d nextNext) {
+		var t = previous.getTranslation().plus(next.getTranslation()).div(2);
+		Translation2d cPrevious = previousPrevious == null ? null
+				: circleCenter(
+						previousPrevious.getTranslation(), previous.getTranslation(), next.getTranslation());
+		Translation2d cNext = nextNext == null ? null
+				: circleCenter(
+						previous.getTranslation(), next.getTranslation(), nextNext.getTranslation());
+		if (cPrevious != null && cNext != null)
+			t = interpolate(previous.getTranslation(), next.getTranslation(), cPrevious)
+					.plus(interpolate(previous.getTranslation(), next.getTranslation(), cNext)).div(2);
+		else if (cPrevious != null && cNext == null)
+			t = interpolate(previous.getTranslation(), next.getTranslation(), cPrevious);
+		else if (cPrevious == null && cNext != null)
+			t = interpolate(previous.getTranslation(), next.getTranslation(), cNext);
+		var r = mean(previous.getRotation(), next.getRotation());
+		return new Pose2d(t, r);
+	}
+
+	/**
+	 * Returns the center of the circle that passes through the specified
+	 * {@code Translation2d}s.
+	 * 
+	 * @param p1 a {@code Translation2d}
+	 * @param p2 a {@code Translation2d}
+	 * @param p3 a {@code Translation2d}
+	 * @return the center of the circle that passes through the specified
+	 *         {@code Translation2d}s
+	 */
+	public static Translation2d circleCenter(Translation2d p1, Translation2d p2, Translation2d p3) {
+		double x1 = p1.getX();
+		double y1 = p1.getY();
+		double x2 = p2.getX();
+		double y2 = p2.getY();
+		double x3 = p3.getX();
+		double y3 = p3.getY();
+		double d = 2.0 * (x1 * (y2 - y3)
+				+ x2 * (y3 - y1)
+				+ x3 * (y1 - y2));
+		if (Math.abs(d) < 1e-12)
+			return null;
+		double x = ((x1 * x1 + y1 * y1) * (y2 - y3)
+				+ (x2 * x2 + y2 * y2) * (y3 - y1)
+				+ (x3 * x3 + y3 * y3) * (y1 - y2)) / d;
+		double y = ((x1 * x1 + y1 * y1) * (x3 - x2)
+				+ (x2 * x2 + y2 * y2) * (x1 - x3)
+				+ (x3 * x3 + y3 * y3) * (x2 - x1)) / d;
+		return new Translation2d(x, y);
+	}
+
+	/**
+	 * Returns the middle {@code Translation2d} between the two specified
+	 * {@code Translation2d}s on the circle centered at the specified
+	 * {@code Translation2d}.
+	 * 
+	 * @param p1 a {@code Translation2d}
+	 * @param p2 a {@code Translation2d}
+	 * @param center the center of the circle that passes through the specified
+	 *        {@code Translation2d}s
+	 * @return the middle {@code Translation2d} between the two specified
+	 *         {@code Translation2d}s on the circle centered at the specified
+	 *         {@code Translation2d}
+	 */
+	public static Translation2d interpolate(Translation2d p1, Translation2d p2, Translation2d center) {
+		if (center == null)
+			return p1.plus(p2).div(2);
+		p1 = p1.minus(center);
+		p2 = p2.minus(center);
+		double r = (p1.getNorm() + p2.getNorm()) / 2;
+		var angle = mean(p1.getAngle(), p2.getAngle());
+		return translation(r, 0).rotateBy(angle).plus(center);
+	}
+
+	/**
+	 * Returns the mean of the two specified {@code Rotation2d}s.
+	 * 
+	 * @param r1 a {@code Rotation2d}
+	 * @param r2 a {@code Rotation2d}
+	 * @return the mean of the two specified {@code Rotation2d}s
+	 */
+	private static Rotation2d mean(Rotation2d r1, Rotation2d r2) {
+		return r2.minus(r1).div(2).plus(r1);
 	}
 
 }

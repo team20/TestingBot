@@ -82,14 +82,17 @@ public class CommandComposer {
 	 * 
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param refinements the number of refinments applied to the path
 	 * @param robotToTag the {@code Tranform2d} representing the pose of the
 	 *        {@code AprilTag} relative to the robot when the robot is aligned
 	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * @return a {@code Command} for visiting all the specified {@code AprilTag}s
 	 */
-	public static Command visitTags(double distanceTolerance, double angleTolerance, Transform2d robotToTag,
-			int... tagIDs) {
+	public static Command visitTags(double distanceTolerance, double angleTolerance, int refinements,
+			Transform2d robotToTag, int... tagIDs) {
 		Pose2d[] poses = PoseEstimationSubsystem.tagPoses(tagIDs);
+		for (int i = 0; i < refinements; i++)
+			poses = PoseEstimationSubsystem.refine(poses);
 		var commands = Arrays.stream(poses).map(
 				p -> AlignCommand
 						.moveTo(
@@ -106,15 +109,18 @@ public class CommandComposer {
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 * @param intermediateToleranceRatio the ratio of distance and angle tolerances
 	 *        at intermediate {@code AprilTags} for faster movements
+	 * @param refinements the number of refinments applied to the path
 	 * @param robotToTag the {@code Tranform2d} representing the pose of the
 	 *        {@code AprilTag} relative to the robot when the robot is aligned
 	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * @return a {@code Command} for visiting all the specified {@code AprilTag}s
 	 */
 	public static Command visitTagsOptimized(double distanceTolerance, double angleTolerance,
-			double intermediateToleranceRatio, Transform2d robotToTag,
+			double intermediateToleranceRatio, int refinements, Transform2d robotToTag,
 			int... tagIDs) {
 		var poses = PoseEstimationSubsystem.tagPoses(tagIDs);
+		for (int i = 0; i < refinements; i++)
+			poses = PoseEstimationSubsystem.refine(poses);
 		poses = Arrays.stream(poses).map(p -> p.plus(robotToTag)).toList().toArray(new Pose2d[0]);
 		return AlignCommand.follow(
 				m_driveSubsystem, m_poseEstimationSubsystem, distanceTolerance, angleTolerance,
