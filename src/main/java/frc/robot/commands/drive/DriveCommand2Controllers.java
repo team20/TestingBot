@@ -8,10 +8,10 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.PoseEstimationSubsystem;
 
 /**
  * This {@code DriveCommand} aims to maneuver the robot to a certain
@@ -133,8 +133,6 @@ public class DriveCommand2Controllers extends Command {
 						new TrapezoidProfile.Constraints(Math.toDegrees(kTurnMaxAngularSpeed),
 								Math.toDegrees(kTurnMaxAcceleration))));
 		m_controllerYaw.enableContinuousInput(-180, 180);
-		m_controllerXY.setGoal(0);
-		m_controllerYaw.setGoal(0);
 	}
 
 	/**
@@ -188,8 +186,8 @@ public class DriveCommand2Controllers extends Command {
 		}
 		m_controllerXY.setTolerance(m_distanceTolerance);
 		m_controllerYaw.setTolerance(m_angleTolerance);
-		m_controllerXY.reset(m_targetPose.getTranslation().minus(pose.getTranslation()).getNorm());
-		m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+		m_controllerXY.reset(m_targetPose.minus(pose).getTranslation().getNorm());
+		m_controllerYaw.reset(pose.getRotation().getDegrees());
 	}
 
 	/**
@@ -198,9 +196,21 @@ public class DriveCommand2Controllers extends Command {
 	 */
 	@Override
 	public void execute() {
-		var speeds = PoseEstimationSubsystem
-				.chassisSpeeds(m_poseSupplier.get(), m_targetPose, m_controllerXY, m_controllerYaw);
-		m_driveSubsystem.drive(speeds, true);
+		var currentPose = m_poseSupplier.get();
+		Translation2d translationalDisplacement = m_targetPose.getTranslation()
+				.minus(currentPose.getTranslation());
+		double velocityX = 0, velocityY = 0;
+		double distance = translationalDisplacement.getNorm();
+		if (distance > 0) {
+			double speed = Math.abs(m_controllerXY.calculate(distance, 0));
+			speed = applyThreshold(speed, kDriveMinSpeed);
+			velocityX = speed * translationalDisplacement.getAngle().getCos();
+			velocityY = speed * translationalDisplacement.getAngle().getSin();
+		}
+		double angularVelocityRadiansPerSecond = m_controllerYaw
+				.calculate(currentPose.getRotation().getDegrees(), m_targetPose.getRotation().getDegrees());
+		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
+		m_driveSubsystem.drive(velocityX, velocityY, angularVelocityRadiansPerSecond, true);
 	}
 
 	/**

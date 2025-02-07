@@ -126,8 +126,8 @@ public class ChainableDriveCommand2Controllers extends DriveCommand2Controllers 
 		m_controllerXY.setTolerance(m_distanceTolerance);
 		m_controllerYaw.setTolerance(m_angleTolerance);
 		if (m_previous == null) {
-			m_controllerXY.reset(m_targetPose.getTranslation().minus(pose.getTranslation()).getNorm());
-			m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+			m_controllerXY.reset(m_targetPose.minus(pose).getTranslation().getNorm());
+			m_controllerYaw.reset(pose.getRotation().getDegrees());
 		}
 	}
 

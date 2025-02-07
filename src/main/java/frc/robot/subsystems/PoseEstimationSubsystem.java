@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -19,7 +18,6 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -118,11 +116,8 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				.getStructTopic("/SmartDashboard/Pose@PoseEstimationSubsystem", Pose2d.struct)
 				.publish();
 		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
-		m_controllerXY.setSetpoint(0);
-
 		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
 		m_controllerYaw.enableContinuousInput(-180, 180);
-		m_controllerYaw.setSetpoint(0);
 	}
 
 	/**
@@ -152,7 +147,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 			var poseEstimator = e.getValue();
 			for (var r : camera.getAllUnreadResults()) { // for every result r
 				if (firstCamera || r.getTargets().size() > 1) {
-					Optional<EstimatedRobotPose> p = poseEstimator.update(r); // assign estimated pose to e
+					Optional<EstimatedRobotPose> p = poseEstimator.update(r);
 					if (p.isPresent()) { // if successful
 						EstimatedRobotPose v = p.get(); // get successfully estimated pose
 						m_poseEstimator.addVisionMeasurement(v.estimatedPose.toPose2d(), v.timestampSeconds);
@@ -201,71 +196,29 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * 
 	 * @param currentPose the current {@code Pose2d}
 	 * @param targetPose the target {@code Pose2d}
-	 * @param contollerXY the {@code PIDController} for controlling the robot in the
-	 *        x and y dimensions in meters (input: error in meters, output: velocity
-	 *        in meters per second)
+	 * @param controllerXY the {@code PIDController} for controlling the robot in
+	 *        the x and y dimensions in meters (input: error in meters, output:
+	 *        velocity in meters per second)
 	 * @param controllerYaw the {@code PIDController} for controlling the robot in
 	 *        the yaw dimension in degrees (input: error in degrees, output:
 	 *        velocity in radians per second)
 	 * @return the calculated {@code ChassisSpeeds} to move from the current
 	 *         {@code Pose2d} toward the target {@code Pose2d}
 	 */
-	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController contollerXY,
+	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController controllerXY,
 			PIDController controllerYaw) {
-		return chassisSpeeds(currentPose, targetPose, d -> contollerXY.calculate(d), a -> controllerYaw.calculate(a));
-	}
-
-	/**
-	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
-	 * towards the target {@code Pose2d}.
-	 * 
-	 * @param currentPose the current {@code Pose2d}
-	 * @param targetPose the target {@code Pose2d}
-	 * @param contollerXY the {@code ProfiledPIDController} for controlling the
-	 *        robot in the x and y dimensions in meters (input: error in meters,
-	 *        output: velocity in meters per second)
-	 * @param controllerYaw the {@code ProfiledPIDController} for controlling the
-	 *        robot in the yaw dimension in degrees (input: error in degrees,
-	 *        output: velocity in radians per second)
-	 * @return the calculated {@code ChassisSpeeds} to move from the current
-	 *         {@code Pose2d} towards the target {@code Pose2d}
-	 */
-	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose,
-			ProfiledPIDController contollerXY, ProfiledPIDController controllerYaw) {
-		return chassisSpeeds(currentPose, targetPose, d -> contollerXY.calculate(d), a -> controllerYaw.calculate(a));
-	}
-
-	/**
-	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
-	 * towards the target {@code Pose2d}.
-	 * 
-	 * @param currentPose the current {@code Pose2d}
-	 * @param targetPose the target {@code Pose2d}
-	 * @param contollerXY the {@code Function<Double, Double>} for controlling the
-	 *        robot in the x and y dimensions in meters (input: error in meters,
-	 *        output: velocity in meters per second)
-	 * @param controllerYaw the {@code Function<Double, Double>} for controlling the
-	 *        robot in the yaw dimension in degrees (input: error in degrees,
-	 *        output: velocity in radians per second)
-	 * @return the calculated {@code ChassisSpeeds} to move from the current
-	 *         {@code Pose2d} towards the target {@code Pose2d}
-	 */
-	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose,
-			Function<Double, Double> contollerXY, Function<Double, Double> controllerYaw) {
 		Translation2d translationalDisplacement = targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
 		double distance = translationalDisplacement.getNorm();
 		if (distance > 0) {
-			// apply(double) returns a non-positive value (setpoint: 0)
-			double speed = -contollerXY.apply(distance);
+			double speed = controllerXY.calculate(0.0, distance);
 			speed = applyThreshold(speed, kDriveMinSpeed);
 			velocityX = speed * translationalDisplacement.getAngle().getCos();
 			velocityY = speed * translationalDisplacement.getAngle().getSin();
 		}
-		Rotation2d angularDisplacement = targetPose.getRotation().minus(currentPose.getRotation());
-		// apply(double) returns a non-positive value (setpoint: 0)
-		double angularVelocityRadiansPerSecond = -controllerYaw.apply(angularDisplacement.getDegrees());
+		double angularVelocityRadiansPerSecond = controllerYaw
+				.calculate(currentPose.getRotation().getDegrees(), targetPose.getRotation().getDegrees());
 		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}
