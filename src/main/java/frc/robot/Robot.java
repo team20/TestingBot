@@ -68,36 +68,27 @@ public class Robot extends TimedRobot {
 				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
 		m_autoSelector.addOption(
 				"Move around the Red Reef",
-				CommandComposer.visitTags(0.03, 3, 0, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_autoSelector.addOption(
 				"Move around the Blue Reef",
-				CommandComposer.visitTags(0.03, 3, 0, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
-		m_autoSelector.addOption(
-				"Move around the Red Reef (Refined)",
-				CommandComposer.visitTags(0.03, 3, 2, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
-		m_autoSelector.addOption(
-				"Move around the Blue Reef (Refined)",
-				CommandComposer.visitTags(0.03, 3, 2, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
-		m_autoSelector.addOption(
-				"Move around the Red Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, 5, 0, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
-		m_autoSelector.addOption(
-				"Move around the Blue Reef (Faster)",
-				CommandComposer.visitTagsOptimized(0.03, 3, 5, 0, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
-		m_autoSelector.addOption(
-				"Move around the Red Reef (Faster, Refined)",
-				CommandComposer.visitTagsOptimized(0.03, 3, 5, 2, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
-		m_autoSelector.addOption(
-				"Move around the Blue Reef (Faster, Refined)",
-				CommandComposer.visitTagsOptimized(0.03, 3, 5, 2, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		m_autoSelector.addOption(
 				"Move around the Red Reef (Complex)",
 				CommandComposer.visitTags(
-						0.03, 3, 20, transform(1.2, 0, 180), transform(0.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_autoSelector.addOption(
 				"Move around the Blue Reef (Complex)",
 				CommandComposer.visitTags(
-						0.03, 3, 20, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+		m_autoSelector.addOption(
+				"Quickly Visit Red Team Tags",
+				CommandComposer
+						.visitTagsOptimized(0.03, 2, 5, transform(1.5, 0, 180), 11, 1, 6, 7, 8, 2, 8, 7, 6, 11));
+		m_autoSelector.addOption(
+				"Quickly Visit Blue Team Tags",
+				CommandComposer
+						.visitTagsOptimized(
+								0.03, 2, 5, transform(1.5, 0, 180), 22, 12, 17, 18, 19, 13, 19, 18, 17, 22));
 		SmartDashboard.putData(m_autoSelector);
 
 		SmartDashboard.putData(m_pdh);
@@ -187,7 +178,6 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		m_autonomousCommand = m_autoSelector.getSelected();
-
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
 		}
