@@ -2,6 +2,7 @@ package frc.robot;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.*;
+import static frc.robot.Constants.DriveConstants.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +36,29 @@ public class CommandComposer {
 				m_driveSubsystem.testCommand(), // F, B, SL, SR, RL, RR
 				DriveCommand3Controllers.testCommand(m_driveSubsystem).withTimeout(2),
 				DriveCommand2Controllers.testCommand(m_driveSubsystem).withTimeout(2));
+	}
+
+	/**
+	 * Returns a {@code Command} for testing the rotation capability of the robot.
+	 * 
+	 * @return a {@code Command} for testing the rotation capability of the robot.
+	 */
+	public static Command testRotation() {
+		double rotionalSpeed = kTurnMaxAngularSpeed * 0.9;
+		double duration = 2.0;
+		return sequence(
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, rotionalSpeed, false))
+						.withTimeout(duration),
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
+						.withTimeout(duration),
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, rotionalSpeed, false))
+						.withTimeout(duration),
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
+						.withTimeout(duration));
 	}
 
 	/**
