@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -35,7 +36,11 @@ import frc.robot.subsystems.PoseEstimationSubsystem;
 import frc.robot.subsystems.VisionSimulator;
 
 public class Robot extends TimedRobot {
+	private final SendableChooser<Command> m_autoSelector = new SendableChooser<Command>();
+	private final SendableChooser<Command> m_testSelector = new SendableChooser<Command>();
+
 	private Command m_autonomousCommand;
+	private Command m_testCommand;
 	private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
 	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
 			ControllerConstants.kDriverControllerPort);
@@ -48,11 +53,22 @@ public class Robot extends TimedRobot {
 	private final PhotonCamera m_camera2 = RobotBase.isSimulation()
 			? new PhotonCameraSimulator("Camera2", kRobotToCamera2, m_visionSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera2");
-	private final PoseEstimationSubsystem m_poseEstimationSubystem = new PoseEstimationSubsystem(m_driveSubsystem)
+	private final PoseEstimationSubsystem m_poseEstimationSubsystem = new PoseEstimationSubsystem(m_driveSubsystem)
 			.addCamera(m_camera1, kRobotToCamera1)
 			.addCamera(m_camera2, kRobotToCamera2);
 
 	public Robot() {
+		CommandComposer.setSubsystems(m_driveSubsystem, m_poseEstimationSubsystem);
+
+		m_autoSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
+
+		m_testSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
+		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
+		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
+
+		SmartDashboard.putData("Auto Selector", m_autoSelector);
+		SmartDashboard.putData("Test Selector", m_testSelector);
+
 		SmartDashboard.putData(m_pdh);
 		SmartDashboard.putData(CommandScheduler.getInstance());
 		DataLogManager.start();
@@ -106,7 +122,7 @@ public class Robot extends TimedRobot {
 		return run(() -> {
 			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
 			speeds = speeds.plus(
-					m_poseEstimationSubystem
+					m_poseEstimationSubsystem
 							.chassisSpeedsTowardClosestTag(robotToTag, distanceThresholdInMeters));
 			m_driveSubsystem.drive(speeds, true);
 		});
@@ -131,11 +147,9 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void autonomousInit() {
-		m_autonomousCommand = null;
-
-		if (m_autonomousCommand != null) {
+		m_autonomousCommand = m_autoSelector.getSelected();
+		if (m_autonomousCommand != null)
 			m_autonomousCommand.schedule();
-		}
 	}
 
 	@Override
@@ -148,9 +162,10 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void teleopInit() {
-		if (m_autonomousCommand != null) {
+		if (m_autonomousCommand != null)
 			m_autonomousCommand.cancel();
-		}
+		if (m_testCommand != null)
+			m_testCommand.cancel();
 	}
 
 	@Override
@@ -164,7 +179,9 @@ public class Robot extends TimedRobot {
 	@Override
 	public void testInit() {
 		CommandScheduler.getInstance().cancelAll();
-		m_driveSubsystem.testCommand().schedule();
+		m_testCommand = m_testSelector.getSelected();
+		if (m_testCommand != null)
+			m_testCommand.schedule();
 	}
 
 	@Override

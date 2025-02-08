@@ -316,6 +316,22 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Calculates the angular displacement from the estimated {@code Pose2d} of the
+	 * robot to the specified {@code AprilTag}.
+	 * 
+	 * @param tagID the ID of the {@code AprilTag}
+	 * @return the angular displacement from the estimated {@code Pose2d} of the
+	 *         robot to the specified {@code AprilTag}
+	 */
+	public Rotation2d angularDisplacement(int tagID) {
+		try {
+			return angularDisplacement(this.getEstimatedPose(), kFieldLayout.getTagPose(tagID).get().toPose2d());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/**
 	 * Calculates the translational displacement from the initial {@code Pose2d} to
 	 * the last {@code Pose2d}.
 	 * 
