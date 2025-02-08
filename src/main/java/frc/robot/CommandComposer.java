@@ -27,20 +27,25 @@ public class CommandComposer {
 		double rotionalSpeed = kTurnMaxAngularSpeed * 0.9;
 		double duration = 2.0;
 		return sequence(
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(0.1),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(.5, 0, rotionalSpeed, true))
 						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(-.5, 0, -rotionalSpeed, true))
 						.withTimeout(duration),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, rotionalSpeed, false))
 						.withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
 						.withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, rotionalSpeed, false))
 						.withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
 						.withTimeout(duration));
 	}
