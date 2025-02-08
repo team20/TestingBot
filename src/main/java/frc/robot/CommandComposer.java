@@ -215,4 +215,26 @@ public class CommandComposer {
 		return sequence(commands.toArray(new Command[0]));
 	}
 
+	/**
+	 * Returns a {@code Command} for visiting all the specified {@code AprilTag}s.
+	 * 
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param robotToTag the {@code Tranform2d} representing the pose of the
+	 *        {@code AprilTag} relative to the robot when the robot is aligned
+	 * @param tagIDs the IDs of the {@code AprilTag}s
+	 * @return a {@code Command} for visiting all the specified {@code AprilTag}s
+	 */
+	public static Command R1ToR7toR2Dance(double distanceTolerance, double angleTolerance,
+			Transform2d robotToTag, int... tagIDs) {
+		Pose2d[] poses = PoseEstimationSubsystem.tagPoses(tagIDs);
+		var commands = Arrays.stream(poses).map(
+				p -> AlignCommand
+						.moveTo(
+								m_driveSubsystem, m_poseEstimationSubsystem, p.plus(robotToTag), distanceTolerance,
+								angleTolerance))
+				.toList();
+		return sequence(commands.toArray(new Command[0]));
+	}
+
 }

@@ -70,7 +70,7 @@ public class Constants {
 		// public static final double kTeleopMaxTurnVoltage = 7.2;
 
 		// public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
-		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
+		public static final double kDriveMaxSpeed = 2.0; // 2 meters per second
 		public static final double kDriveMinSpeed = .03; // .3 meters per second // TODO: find a good value
 		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
 		public static final double kTurnMinAngularSpeed = Math.toRadians(0); // 0 degrees per second

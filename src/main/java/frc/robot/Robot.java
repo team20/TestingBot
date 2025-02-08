@@ -89,6 +89,10 @@ public class Robot extends TimedRobot {
 				CommandComposer
 						.visitTagsOptimized(
 								0.03, 2, 5, transform(1.5, 0, 180), 22, 12, 17, 18, 19, 13, 19, 18, 17, 22));
+		m_autoSelector.addOption(
+				"Mrs Myers Special",
+				CommandComposer.R1ToR7toR2Dance(0.03, 3, transform(1.5, 0, 180), 1, 7, 2));
+
 		SmartDashboard.putData(m_autoSelector);
 
 		SmartDashboard.putData(m_pdh);
