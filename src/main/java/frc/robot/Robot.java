@@ -38,8 +38,10 @@ import frc.robot.subsystems.VisionSimulator;
 
 public class Robot extends TimedRobot {
 	private final SendableChooser<Command> m_autoSelector = new SendableChooser<Command>();
+	private final SendableChooser<Command> m_testSelector = new SendableChooser<Command>();
 
 	private Command m_autonomousCommand;
+	private Command m_testCommand;
 	private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
 	private final CommandPS4Controller m_driverController = new CommandPS4Controller(
 			ControllerConstants.kDriverControllerPort);
@@ -58,28 +60,6 @@ public class Robot extends TimedRobot {
 
 	public Robot() {
 		CommandComposer.setSubsystems(m_driveSubsystem, m_poseEstimationSubsystem);
-		m_autoSelector.addOption("Test Subsystems and Commands", CommandComposer.testSubsystemsAndCommands());
-		m_autoSelector.addOption("Test Rotation", CommandComposer.testRotation());
-		m_autoSelector.addOption(
-				"Move 6 Feet Forward and then Backward (using 2 PID Controllers)",
-				CommandComposer.moveForwardBackward2Controllers(6, 0.03, 3));
-		m_autoSelector.addOption(
-				"Move 6 Feet Forward and then Backward (using 3 PID Controllers)",
-				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
-		m_autoSelector.addOption(
-				"Move around the Red Reef",
-				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
-		m_autoSelector.addOption(
-				"Move around the Blue Reef",
-				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
-		m_autoSelector.addOption(
-				"Move around the Red Reef (Complex)",
-				CommandComposer.visitTags(
-						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
-		m_autoSelector.addOption(
-				"Move around the Blue Reef (Complex)",
-				CommandComposer.visitTags(
-						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
 		m_autoSelector.addOption(
 				"Quickly Visit Red Team Tags",
 				CommandComposer
@@ -94,6 +74,35 @@ public class Robot extends TimedRobot {
 				CommandComposer.R1ToR7toR2Dance(0.03, 3, transform(1.5, 0, 180), 1, 7, 2));
 
 		SmartDashboard.putData(m_autoSelector);
+
+		m_testSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
+		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
+		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
+		m_testSelector.addOption("Test Subsystems and Commands", CommandComposer.testSubsystemsAndCommands());
+		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
+		m_testSelector.addOption(
+				"Move 6 Feet Forward and then Backward (using 2 PID Controllers)",
+				CommandComposer.moveForwardBackward2Controllers(6, 0.03, 3));
+		m_testSelector.addOption(
+				"Move 6 Feet Forward and then Backward (using 3 PID Controllers)",
+				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
+		m_testSelector.addOption(
+				"Move around the Red Reef",
+				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+		m_testSelector.addOption(
+				"Move around the Blue Reef",
+				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+		m_testSelector.addOption(
+				"Move around the Red Reef (Complex)",
+				CommandComposer.visitTags(
+						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
+		m_testSelector.addOption(
+				"Move around the Blue Reef (Complex)",
+				CommandComposer.visitTags(
+						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+
+		SmartDashboard.putData("Auto Selector", m_autoSelector);
+		SmartDashboard.putData("Test Selector", m_testSelector);
 
 		SmartDashboard.putData(m_pdh);
 		SmartDashboard.putData(CommandScheduler.getInstance());
@@ -182,9 +191,8 @@ public class Robot extends TimedRobot {
 	@Override
 	public void autonomousInit() {
 		m_autonomousCommand = m_autoSelector.getSelected();
-		if (m_autonomousCommand != null) {
+		if (m_autonomousCommand != null)
 			m_autonomousCommand.schedule();
-		}
 	}
 
 	@Override
@@ -197,9 +205,10 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void teleopInit() {
-		if (m_autonomousCommand != null) {
+		if (m_autonomousCommand != null)
 			m_autonomousCommand.cancel();
-		}
+		if (m_testCommand != null)
+			m_testCommand.cancel();
 	}
 
 	@Override
@@ -213,7 +222,9 @@ public class Robot extends TimedRobot {
 	@Override
 	public void testInit() {
 		CommandScheduler.getInstance().cancelAll();
-		CommandComposer.testSubsystemsAndCommands().schedule();
+		m_testCommand = m_testSelector.getSelected();
+		if (m_testCommand != null)
+			m_testCommand.schedule();
 	}
 
 	@Override

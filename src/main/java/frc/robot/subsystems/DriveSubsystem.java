@@ -201,6 +201,21 @@ public class DriveSubsystem extends SubsystemBase {
 		omegaRadiansPerSecond = Math.signum(omegaRadiansPerSecond) * Math.pow(omegaRadiansPerSecond, 2)
 				* kTurnMaxAngularSpeed;
 
+		return chassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
+	}
+
+	/**
+	 * Constructs a {@code ChassisSpeeds} object.
+	 *
+	 * @param vxMetersPerSecond forward velocity in meters per second
+	 * @param vyMetersPerSecond sideways velocity in meters per second
+	 * @param omegaRadiansPerSecond angular velocity in radians per second
+	 */
+	public static ChassisSpeeds chassisSpeeds(double vxMetersPerSecond, double vyMetersPerSecond,
+			double omegaRadiansPerSecond) {
+		vxMetersPerSecond = MathUtil.clamp(vxMetersPerSecond, -kDriveMaxSpeed, kDriveMaxSpeed);
+		vyMetersPerSecond = MathUtil.clamp(vyMetersPerSecond, -kDriveMaxSpeed, kDriveMaxSpeed);
+		omegaRadiansPerSecond = MathUtil.clamp(omegaRadiansPerSecond, -kTurnMaxAngularSpeed, kTurnMaxAngularSpeed);
 		return new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
 	}
 
@@ -217,7 +232,7 @@ public class DriveSubsystem extends SubsystemBase {
 			boolean isFieldRelative) {
 		setModuleStates(
 				calculateModuleStates(
-						new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond),
+						chassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond),
 						isFieldRelative));
 	}
 

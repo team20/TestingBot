@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.AlignCommand;
@@ -47,20 +48,25 @@ public class CommandComposer {
 		double rotionalSpeed = kTurnMaxAngularSpeed * 0.9;
 		double duration = 2.0;
 		return sequence(
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(0.1),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(.5, 0, rotionalSpeed, true))
 						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(-.5, 0, -rotionalSpeed, true))
 						.withTimeout(duration),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, rotionalSpeed, false))
 						.withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
 						.withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, rotionalSpeed, false))
 						.withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0.05, 0, 0, false))
+						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
 						.withTimeout(duration));
 	}
@@ -235,6 +241,22 @@ public class CommandComposer {
 								angleTolerance))
 				.toList();
 		return sequence(commands.toArray(new Command[0]));
+	/* Returns a {@code Command} for turning the robot toward the specified
+	 * {@code AprilTag}.
+	 * 
+	 * @param tagID the ID of the {@code AprilTag}
+	 * @return a {@code Command} for turning the robot toward the specified
+	 *         {@code AprilTag}
+	 */
+
+	public static Command turnTowardTag(int tagID) {
+		return m_driveSubsystem.run(() -> {
+			Rotation2d a = m_poseEstimationSubsystem.angularDisplacement(1);
+			if (a != null)
+				m_driveSubsystem.drive(
+						0, 0, a.getDegrees() * kTurnP,
+						false);
+		}).withTimeout(1);
 	}
 
 }

@@ -207,15 +207,14 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController controllerXY,
 			PIDController controllerYaw) {
-		Translation2d translationalDisplacement = targetPose.getTranslation()
+		Translation2d current2target = targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
-		double distance = translationalDisplacement.getNorm();
+		double distance = current2target.getNorm();
 		if (distance > 0) {
-			double speed = controllerXY.calculate(0.0, distance);
-			speed = applyThreshold(speed, kDriveMinSpeed);
-			velocityX = speed * translationalDisplacement.getAngle().getCos();
-			velocityY = speed * translationalDisplacement.getAngle().getSin();
+			double speed = Math.abs(controllerXY.calculate(distance, 0));
+			velocityX = speed * current2target.getAngle().getCos();
+			velocityY = speed * current2target.getAngle().getSin();
 		}
 		double angularVelocityRadiansPerSecond = controllerYaw
 				.calculate(currentPose.getRotation().getDegrees(), targetPose.getRotation().getDegrees());
@@ -388,6 +387,23 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Calculates the angular displacement from the estimated {@code Pose2d} of the
+	 * robot to the specified {@code AprilTag}.
+	 * 
+	 * @param tagID the ID of the {@code AprilTag}
+	 * @return the angular displacement from the estimated {@code Pose2d} of the
+	 *         robot to the specified {@code AprilTag}
+	 */
+	public Rotation2d angularDisplacement(int tagID) {
+		try {
+			return angularDisplacement(this.getEstimatedPose(), kFieldLayout.getTagPose(tagID).get().toPose2d());
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/**
+	 * >>>>>>> auto-align
 	 * Calculates the translational displacement from the initial {@code Pose2d} to
 	 * the last {@code Pose2d}.
 	 * 

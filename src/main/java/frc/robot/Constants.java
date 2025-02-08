@@ -56,7 +56,7 @@ public class Constants {
 		// public static final double kP = 0.09;
 		public static final double kP = 0.05; // TODO: find a good value
 		public static final double kI = 0.0;
-		public static final double kD = kP * 0.1; // TODO: find a good value
+		public static final double kD = 0.1 * kP; // TODO: find a good value
 		// public static final double kD = 0;
 		public static final double kS = 0;
 		// public static final double kV = 0.11;
