@@ -205,14 +205,14 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController contollerXY,
 			PIDController controllerYaw) {
-		Translation2d translationalDisplacement = targetPose.getTranslation()
+		Translation2d current2target = targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
-		double distance = translationalDisplacement.getNorm();
+		double distance = current2target.getNorm();
 		if (distance > 0) {
-			double speed = contollerXY.calculate(0, distance);
-			velocityX = speed * translationalDisplacement.getAngle().getCos();
-			velocityY = speed * translationalDisplacement.getAngle().getSin();
+			double speed = Math.abs(contollerXY.calculate(distance, 0));
+			velocityX = speed * current2target.getAngle().getCos();
+			velocityY = speed * current2target.getAngle().getSin();
 		}
 		double angularVelocityRadiansPerSecond = controllerYaw
 				.calculate(currentPose.getRotation().getDegrees(), targetPose.getRotation().getDegrees());
