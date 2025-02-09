@@ -81,7 +81,6 @@ public class Constants {
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
-		// TODO adjust kDriveGearRatio or kWheelDiameter so that we can remove 0.93
 		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio * 0.93;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
@@ -92,9 +91,9 @@ public class Constants {
 
 		public static final int kEncoderDepth = 4;
 		public static final int kEncoderMeasurementPeriod = 16;
-		public static final int kDriveSmartCurrentLimit = 60; // TODO: find a good value
+		public static final int kDriveSmartCurrentLimit = 20; // TODO: find a good value
 		public static final int kDrivePeakCurrentLimit = kDriveSmartCurrentLimit + 15;
-		public static final int kSteerSmartCurrentLimit = 60; // TODO: find a good value
+		public static final int kSteerSmartCurrentLimit = 20; // TODO: find a good value
 		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;

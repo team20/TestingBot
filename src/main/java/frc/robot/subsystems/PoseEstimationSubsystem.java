@@ -371,4 +371,17 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		return new Pose2d(x, y, Rotation2d.fromDegrees(yawInDegrees));
 	}
 
+	/**
+	 * Constructs a {@code Transform2d}.
+	 * 
+	 * @param x the x component of the {@code Transform2d}
+	 * @param y the y component of the {@code Transform2d}
+	 * @param yawInDegrees the rotational component of the {@code Transform2d} in
+	 *        degrees
+	 * @return the constructed {@code Transform2d}
+	 */
+	public static Transform2d transform(double x, double y, double yawInDegrees) {
+		return new Transform2d(x, y, Rotation2d.fromDegrees(yawInDegrees));
+	}
+
 }

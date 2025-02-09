@@ -338,7 +338,7 @@ public class DriveSubsystem extends SubsystemBase {
 	public Command testCommand() {
 		double speed = .5;
 		double rotionalSpeed = Math.toRadians(45);
-		double duration = 2.0;
+		double duration = 1.0;
 		return sequence(
 				run(() -> setModuleAngles(0)).withTimeout(1),
 				run(() -> drive(speed, 0, 0, false)).withTimeout(duration),
@@ -346,8 +346,6 @@ public class DriveSubsystem extends SubsystemBase {
 				run(() -> drive(0, speed, 0, false)).withTimeout(duration),
 				run(() -> drive(0, -speed, 0, false)).withTimeout(duration),
 				run(() -> drive(0, 0, rotionalSpeed, false)).withTimeout(duration),
-				run(() -> drive(0, 0, -rotionalSpeed, false)).withTimeout(duration),
-				run(() -> drive(speed, 0, rotionalSpeed, true)).withTimeout(duration),
-				run(() -> drive(-speed, 0, -rotionalSpeed, true)).withTimeout(duration));
+				run(() -> drive(0, 0, -rotionalSpeed, false)).withTimeout(duration));
 	}
 }

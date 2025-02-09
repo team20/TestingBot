@@ -1,10 +1,12 @@
 package frc.robot;
 
+import static edu.wpi.first.math.util.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.DriveConstants.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.commands.drive.DriveCommand2Controllers;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PoseEstimationSubsystem;
 
@@ -16,6 +18,36 @@ public class CommandComposer {
 			PoseEstimationSubsystem poseEstimationSubsystem) {
 		m_driveSubsystem = driveSubsystem;
 		m_poseEstimationSubsystem = poseEstimationSubsystem;
+	}
+
+	/**
+	 * Creates a {@code Command} for testing the {@code DriveSubsystem}. The robot
+	 * must move forward and then backward while rotating left and then right
+	 * relative to the field.
+	 * 
+	 * @return a {@code Command} for testing the {@code DriveSubsystem}. The robot
+	 *         must move forward and then backward while rotating left and then
+	 *         right relative to the field.
+	 */
+	public static Command testDriveSubsystemFieldRelative() {
+		double speed = 1;
+		double rotionalSpeed = Math.toRadians(45);
+		double duration = 2.0;
+		return sequence(
+				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(.1),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(speed, 0, rotionalSpeed, true)).withTimeout(duration),
+				m_driveSubsystem.run(() -> m_driveSubsystem.drive(-speed, 0, -rotionalSpeed, true))
+						.withTimeout(duration));
+	}
+
+	/**
+	 * Returns a {@code Command} for testing all subsystems.
+	 * 
+	 * @return a {@code Command} for testing all subsystems
+	 */
+	public static Command testAllSubsystems() {
+		return sequence(
+				m_driveSubsystem.testCommand());
 	}
 
 	/**
@@ -48,6 +80,27 @@ public class CommandComposer {
 						.withTimeout(duration),
 				m_driveSubsystem.run(() -> m_driveSubsystem.drive(0, 0, -rotionalSpeed, false))
 						.withTimeout(duration));
+	}
+
+	/**
+	 * Returns a {@code Command} for moving forward and then backward.
+	 * 
+	 * @param distanceInFeet the distance in feet
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * 
+	 * @return a {@code Command} for moving forward and then backward.
+	 */
+	public static Command moveForwardBackward2Controllers(double distanceInFeet, double distanceTolerance,
+			double angleTolerance) {
+		return sequence(
+				new DriveCommand2Controllers(m_driveSubsystem, PoseEstimationSubsystem.pose(0.0, 0, 0),
+						distanceTolerance, angleTolerance),
+				new DriveCommand2Controllers(m_driveSubsystem,
+						PoseEstimationSubsystem.pose(feetToMeters(distanceInFeet), 0, 0),
+						distanceTolerance, angleTolerance),
+				new DriveCommand2Controllers(m_driveSubsystem, PoseEstimationSubsystem.pose(0.0, 0, 0),
+						distanceTolerance, angleTolerance));
 	}
 
 	/**

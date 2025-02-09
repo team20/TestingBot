@@ -61,12 +61,22 @@ public class Robot extends TimedRobot {
 		CommandComposer.setSubsystems(m_driveSubsystem, m_poseEstimationSubsystem);
 
 		m_autoSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
+		SmartDashboard.putData("Auto Selector", m_autoSelector);
 
-		m_testSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
+		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
+		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
+		m_testSelector.addOption("Check DriveSubsystem (Robot-Oriented F/B/L/R/LR/RR)", m_driveSubsystem.testCommand());
+		m_testSelector
+				.addOption(
+						"Check DriveSubsystem (Field-Relative F/B with LR/RR)",
+						CommandComposer.testDriveSubsystemFieldRelative());
+		m_testSelector
+				.addOption(
+						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
+						CommandComposer.moveForwardBackward2Controllers(6, 0.01, 1));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 
-		SmartDashboard.putData("Auto Selector", m_autoSelector);
 		SmartDashboard.putData("Test Selector", m_testSelector);
 
 		SmartDashboard.putData(m_pdh);
