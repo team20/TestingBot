@@ -504,6 +504,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
 	 * Returns the {@code Pose2d}s of the specified {@code AprilTag}s.
+	 * 
 	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * @return the {@code Pose2d}s of the specified {@code AprilTag}s
 	 */
