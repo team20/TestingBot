@@ -89,7 +89,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
 	 * The {@code PIDController} for controlling the robot in the yaw
-	 * dimension in degrees (input: error in degrees, output: velocity in radians
+	 * dimension in radians (input: error in radians, output: velocity in radians
 	 * per second).
 	 */
 	private PIDController m_controllerYaw;
@@ -117,7 +117,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				.publish();
 		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
 		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
-		m_controllerYaw.enableContinuousInput(-180, 180);
+		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 *        the x and y dimensions in meters (input: error in meters, output:
 	 *        velocity in meters per second)
 	 * @param controllerYaw the {@code PIDController} for controlling the robot in
-	 *        the yaw dimension in degrees (input: error in degrees, output:
+	 *        the yaw dimension in radians (input: error in radians, output:
 	 *        velocity in radians per second)
 	 * @return the calculated {@code ChassisSpeeds} to move from the current
 	 *         {@code Pose2d} toward the target {@code Pose2d}
@@ -217,8 +217,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 			velocityY = speed * current2target.getAngle().getSin();
 		}
 		double angularVelocityRadiansPerSecond = controllerYaw
-				.calculate(currentPose.getRotation().getDegrees(), targetPose.getRotation().getDegrees());
-		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
+				.calculate(currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}
 
@@ -505,7 +504,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
 	 * Returns the {@code Pose2d}s of the specified {@code AprilTag}s.
-	 * 
 	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * @return the {@code Pose2d}s of the specified {@code AprilTag}s
 	 */

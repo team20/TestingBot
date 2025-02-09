@@ -54,13 +54,13 @@ public class ChainableDriveCommand2Controllers extends DriveCommand2Controllers 
 	 *        begins to periodically execute this
 	 *        {@code ChainableDriveCommand})
 	 * @param distanceTolerance the distance error in meters which is tolerable
-	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 */
 	public ChainableDriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
-			double angleTolerance) {
-		super(driveSubsystem, poseSupplier, targetPoseSupplier, distanceTolerance, angleTolerance);
+			double angleToleranceInDegrees) {
+		super(driveSubsystem, poseSupplier, targetPoseSupplier, false, distanceTolerance, angleToleranceInDegrees);
 		m_previous = null;
 	}
 
@@ -71,13 +71,14 @@ public class ChainableDriveCommand2Controllers extends DriveCommand2Controllers 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
 	 * @param targetPose the {@code Pose2d} to which the robot needs to move
 	 * @param distanceTolerance the distance error in meters which is tolerable
-	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code ChainableDriveCommand}
 	 */
 	public ChainableDriveCommand2Controllers(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
-			double angleTolerance, ChainableDriveCommand2Controllers previous) {
-		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance, angleTolerance,
+			double angleToleranceInDegrees, ChainableDriveCommand2Controllers previous) {
+		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance,
+				angleToleranceInDegrees,
 				previous);
 		m_previous = previous;
 	}
@@ -96,15 +97,15 @@ public class ChainableDriveCommand2Controllers extends DriveCommand2Controllers 
 	 *        begins to periodically execute this
 	 *        {@code ChainableDriveCommand})
 	 * @param distanceTolerance the distance error in meters which is tolerable
-	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 * @param previous the {@code DriveCommand} right before the new
 	 *        {@code ChainableDriveCommand}
 	 */
 	public ChainableDriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
 			Supplier<Pose2d> targetPoseSupplier,
 			double distanceTolerance,
-			double angleTolerance, ChainableDriveCommand2Controllers previous) {
-		super(driveSubsystem, poseSupplier, targetPoseSupplier, distanceTolerance, angleTolerance,
+			double angleToleranceInDegrees, ChainableDriveCommand2Controllers previous) {
+		super(driveSubsystem, poseSupplier, targetPoseSupplier, false, distanceTolerance, angleToleranceInDegrees,
 				previous.m_controllerXY, previous.m_controllerYaw);
 		m_previous = previous;
 	}
@@ -127,7 +128,7 @@ public class ChainableDriveCommand2Controllers extends DriveCommand2Controllers 
 		m_controllerYaw.setTolerance(m_angleTolerance);
 		if (m_previous == null) {
 			m_controllerXY.reset(m_targetPose.minus(pose).getTranslation().getNorm());
-			m_controllerYaw.reset(pose.getRotation().getDegrees());
+			m_controllerYaw.reset(pose.getRotation().getRadians());
 		}
 	}
 

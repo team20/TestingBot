@@ -72,17 +72,31 @@ public class Robot extends TimedRobot {
 		m_autoSelector.addOption(
 				"Mrs Myers Special",
 				CommandComposer.R1ToR7toR2Dance(0.03, 3, transform(1.5, 0, 180), 1, 7, 2));
+		SmartDashboard.putData("Auto Selector", m_autoSelector);
 
-		SmartDashboard.putData(m_autoSelector);
-
-		m_testSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
+		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
+		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
+		m_testSelector.addOption("Check DriveSubsystem (Robot-Oriented F/B/L/R/LR/RR)", m_driveSubsystem.testCommand());
+		m_testSelector
+				.addOption(
+						"Check DriveSubsystem (Field-Relative F/B with LR/RR)",
+						CommandComposer.testDriveSubsystemFieldRelative());
+		m_testSelector
+				.addOption(
+						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
+						CommandComposer.moveForwardBackward2Controllers(6, 0.01, 1));
+		m_testSelector
+				.addOption(
+						"Check PID Constants for Driving (2mx2m Square)", CommandComposer.moveOnSquare(2, 0.01, 1, 16));
+		m_testSelector
+				.addOption(
+						"Check PID Constants for Driving (Unit Circle)",
+						sequence(
+								CommandComposer.moveOnCircle(1, 1, 0.01, 1, 360 * TimedRobot.kDefaultPeriod),
+								CommandComposer.moveOnCircle(1, 2, 0.01, 1, 360 * TimedRobot.kDefaultPeriod),
+								CommandComposer.moveOnCircle(1, 3, 0.01, 1, 360 * TimedRobot.kDefaultPeriod)));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
-		m_testSelector.addOption("Test Subsystems and Commands", CommandComposer.testSubsystemsAndCommands());
-		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
-		m_testSelector.addOption(
-				"Move 6 Feet Forward and then Backward (using 2 PID Controllers)",
-				CommandComposer.moveForwardBackward2Controllers(6, 0.03, 3));
 		m_testSelector.addOption(
 				"Move 6 Feet Forward and then Backward (using 3 PID Controllers)",
 				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
@@ -100,8 +114,6 @@ public class Robot extends TimedRobot {
 				"Move around the Blue Reef (Complex)",
 				CommandComposer.visitTags(
 						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
-
-		SmartDashboard.putData("Auto Selector", m_autoSelector);
 		SmartDashboard.putData("Test Selector", m_testSelector);
 
 		SmartDashboard.putData(m_pdh);
@@ -121,7 +133,7 @@ public class Robot extends TimedRobot {
 				m_driveSubsystem.driveCommand(
 						() -> -m_driverController.getLeftY(),
 						() -> -m_driverController.getLeftX(),
-						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
+						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
 						m_driverController.getHID()::getSquareButton));
 
 		m_driverController.button(Button.kSquare)
@@ -129,7 +141,7 @@ public class Robot extends TimedRobot {
 						driveWithAlignmentCommand(
 								() -> -m_driverController.getLeftY(),
 								() -> -m_driverController.getLeftX(),
-								() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
+								() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
 								new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2));
 
 		m_driverController.button(Button.kX)
@@ -161,7 +173,6 @@ public class Robot extends TimedRobot {
 	 */
 	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
 			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters) {
-
 		return run(() -> {
 			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
 			speeds = speeds.plus(

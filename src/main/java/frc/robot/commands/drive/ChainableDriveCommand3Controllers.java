@@ -130,7 +130,7 @@ public class ChainableDriveCommand3Controllers extends DriveCommand3Controllers 
 			var t = m_targetPose.getTranslation().minus(pose.getTranslation());
 			m_controllerX.reset(t.getX());
 			m_controllerY.reset(t.getY());
-			m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+			m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getRadians());
 		}
 	}
 

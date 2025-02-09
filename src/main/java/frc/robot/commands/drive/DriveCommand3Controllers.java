@@ -59,7 +59,7 @@ public class DriveCommand3Controllers extends Command {
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
-	 * dimension in degrees (input: error in degrees, output: velocity in radians
+	 * dimension in radians (input: error in radians, output: velocity in radians
 	 * per second).
 	 */
 	protected ProfiledPIDController m_controllerYaw;
@@ -75,7 +75,7 @@ public class DriveCommand3Controllers extends Command {
 	protected double m_distanceTolerance;
 
 	/**
-	 * The angle error in degrees which is tolerable.
+	 * The angle error in radians which is tolerable.
 	 */
 	protected double m_angleTolerance;
 
@@ -140,9 +140,8 @@ public class DriveCommand3Controllers extends Command {
 				new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
 						new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration)),
 				new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
-						new TrapezoidProfile.Constraints(Math.toDegrees(kTurnMaxAngularSpeed),
-								Math.toDegrees(kTurnMaxAcceleration))));
-		m_controllerYaw.enableContinuousInput(-180, 180);
+						new TrapezoidProfile.Constraints(kTurnMaxAngularSpeed, kTurnMaxAcceleration)));
+		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
 		m_controllerX.setGoal(0);
 		m_controllerY.setGoal(0);
 		m_controllerYaw.setGoal(0);
@@ -174,7 +173,7 @@ public class DriveCommand3Controllers extends Command {
 		m_poseSupplier = poseSupplier;
 		m_targetPoseSupplier = targetPoseSupplier;
 		m_distanceTolerance = distanceTolerance;
-		m_angleTolerance = angleTolerance;
+		m_angleTolerance = Math.toRadians(angleTolerance);
 		m_controllerX = controllerX;
 		m_controllerY = controllerY;
 		m_controllerYaw = controllerYaw;
@@ -200,7 +199,7 @@ public class DriveCommand3Controllers extends Command {
 		var t = m_targetPose.getTranslation().minus(pose.getTranslation());
 		m_controllerX.reset(t.getX());
 		m_controllerY.reset(t.getY());
-		m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+		m_controllerYaw.reset(m_targetPose.getRotation().minus(pose.getRotation()).getRadians());
 	}
 
 	/**
@@ -213,7 +212,7 @@ public class DriveCommand3Controllers extends Command {
 		var t = m_targetPose.getTranslation().minus(pose.getTranslation());
 		double speedX = -m_controllerX.calculate(t.getX());
 		double speedY = -m_controllerY.calculate(t.getY());
-		double speedYaw = -m_controllerYaw.calculate(m_targetPose.getRotation().minus(pose.getRotation()).getDegrees());
+		double speedYaw = -m_controllerYaw.calculate(m_targetPose.getRotation().minus(pose.getRotation()).getRadians());
 		speedX = applyThreshold(speedX, kDriveMinSpeed);
 		speedY = applyThreshold(speedY, kDriveMinSpeed);
 		speedYaw = applyThreshold(speedYaw, kTurnMinAngularSpeed);

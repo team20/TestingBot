@@ -70,19 +70,21 @@ public class Constants {
 		// public static final double kTeleopMaxTurnVoltage = 7.2;
 
 		// public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
-		public static final double kDriveMaxSpeed = 2.0; // 2 meters per second
-		public static final double kDriveMinSpeed = .03; // .3 meters per second // TODO: find a good value
+		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
+		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+
+		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
+		public static final double kDriveMinSpeed = 0.0; // 0 meters per second
 		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
 		public static final double kTurnMinAngularSpeed = Math.toRadians(0); // 0 degrees per second
 		public static final double kDriveMaxVoltage = 12;
 
 		public static final double kDriveGearRatio = 6.12;
-		public static final double kSteerGearRatio = 150.0 / 7; // TODO: find a good value
-		public static final double kWheelDiameter = Units.inchesToMeters(4);
+		public static final double kSteerGearRatio = 150.0 / 7;
+		public static final double kWheelDiameter = Units.inchesToMeters(3.67);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
-		// TODO adjust kDriveGearRatio or kWheelDiameter so that we can remove 0.93
-		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio * 0.93;
+		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
 		public static final Translation2d kFrontLeftLocation = new Translation2d(0.381, 0.381);
@@ -92,9 +94,9 @@ public class Constants {
 
 		public static final int kEncoderDepth = 4;
 		public static final int kEncoderMeasurementPeriod = 16;
-		public static final int kDriveSmartCurrentLimit = 60; // TODO: find a good value
+		public static final int kDriveSmartCurrentLimit = 20; // TODO: find a good value
 		public static final int kDrivePeakCurrentLimit = kDriveSmartCurrentLimit + 15;
-		public static final int kSteerSmartCurrentLimit = 60; // TODO: find a good value
+		public static final int kSteerSmartCurrentLimit = 20; // TODO: find a good value
 		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;
@@ -103,14 +105,11 @@ public class Constants {
 		public static final double kDriveP = 5; // TODO: find a good value
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		// public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; //
-		// kDriveMaxSpeed in 1/2 sec
-		public static final double kDriveMaxAcceleration = 1 * kDriveMaxSpeed; // kDriveMaxSpeed in 1 sec
+		public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; // kDriveMaxSpeed in 1/2 sec
 
-		public static final double kTurnP = 0.2; // was 0.005 upto 0.2?
-		// public static final double kTurnP = 0.02; // was 0.005 upto 0.2?
-		public static final double kTurnI = 0; // was 0.003
-		public static final double kTurnD = 0; // 0.0
+		public static final double kTurnP = 5; // TODO: find a good value
+		public static final double kTurnI = 0;
+		public static final double kTurnD = 0;
 		public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1/2 sec
 
 	}
