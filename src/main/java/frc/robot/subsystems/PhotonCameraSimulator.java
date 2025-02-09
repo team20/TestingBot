@@ -47,12 +47,6 @@ public class PhotonCameraSimulator extends PhotonCamera {
 	private LinkedList<PhotonPipelineResult> m_unreadResults = new LinkedList<PhotonPipelineResult>();
 
 	/**
-	 * The latest {@code PhotonPipelineResult} that is sufficiently delayed and thus
-	 * is considered readable.
-	 */
-	private PhotonPipelineResult m_latestResult = new PhotonPipelineResult();
-
-	/**
 	 * The {@code StructPublisher} for reporting the {@code Pose2d} of the
 	 * robot in simulation.
 	 */
@@ -97,21 +91,6 @@ public class PhotonCameraSimulator extends PhotonCamera {
 	}
 
 	/**
-	 * Returns the latest {@code PhotonPipelineResult} that is delayed
-	 * sufficiently (by the specified delay in seconds) and thus considered
-	 * readable.
-	 * 
-	 * @return the latest {@code PhotonPipelineResult} that is delayed
-	 *         sufficiently (by the specified delay in seconds) and thus considered
-	 *         readable
-	 */
-	@Override
-	public PhotonPipelineResult getLatestResult() {
-		update(super.getAllUnreadResults().stream().map(t -> distort(t)).toList());
-		return m_latestResult;
-	}
-
-	/**
 	 * Returns a list of {@code PhotonPipelineResult}s since the last call to
 	 * getAllUnreadResults(). These {@code PhotonPipelineResult}s are delayed
 	 * sufficiently (by the specified delay in seconds) and thus considered
@@ -142,7 +121,6 @@ public class PhotonCameraSimulator extends PhotonCamera {
 			var timestamp = m_buffered.getLast().getTimestampSeconds() - this.m_DelayInSeconds;
 			while (m_buffered.size() > 0 && m_buffered.getFirst().getTimestampSeconds() < timestamp) {
 				var r = m_buffered.remove();
-				m_latestResult = r;
 				m_unreadResults.add(r);
 				if (m_unreadResults.size() > 20)
 					m_unreadResults.remove();
