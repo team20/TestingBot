@@ -87,7 +87,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 
 	/**
 	 * The {@code PIDController} for controlling the robot in the yaw
-	 * dimension in degrees (input: error in degrees, output: velocity in radians
+	 * dimension in radians (input: error in radians, output: velocity in radians
 	 * per second).
 	 */
 	private PIDController m_controllerYaw;
@@ -115,7 +115,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				.publish();
 		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
 		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
-		m_controllerYaw.enableContinuousInput(-180, 180);
+		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
 	}
 
 	/**
@@ -194,28 +194,28 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * 
 	 * @param currentPose the current {@code Pose2d}
 	 * @param targetPose the target {@code Pose2d}
-	 * @param contollerXY the {@code PIDController} for controlling the robot in the
-	 *        x and y dimensions in meters (input: error in meters, output: velocity
-	 *        in meters per second)
+	 * @param controllerXY the {@code PIDController} for controlling the robot in
+	 *        the x and y dimensions in meters (input: error in meters, output:
+	 *        velocity in meters per second)
 	 * @param controllerYaw the {@code PIDController} for controlling the robot in
-	 *        the yaw dimension in degrees (input: error in degrees, output:
+	 *        the yaw dimension in radians (input: error in radians, output:
 	 *        velocity in radians per second)
 	 * @return the calculated {@code ChassisSpeeds} to move from the current
 	 *         {@code Pose2d} toward the target {@code Pose2d}
 	 */
-	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController contollerXY,
+	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController controllerXY,
 			PIDController controllerYaw) {
 		Translation2d current2target = targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
 		double distance = current2target.getNorm();
 		if (distance > 0) {
-			double speed = Math.abs(contollerXY.calculate(distance, 0));
+			double speed = Math.abs(controllerXY.calculate(distance, 0));
 			velocityX = speed * current2target.getAngle().getCos();
 			velocityY = speed * current2target.getAngle().getSin();
 		}
 		double angularVelocityRadiansPerSecond = controllerYaw
-				.calculate(currentPose.getRotation().getDegrees(), targetPose.getRotation().getDegrees());
+				.calculate(currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}
 
@@ -360,6 +360,17 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Constructs a {@code Translation2d}.
+	 * 
+	 * @param x the x component of the {@code Translation2d}
+	 * @param y the y component of the {@code Translation2d}
+	 * @return the constructed {@code Translation2d}
+	 */
+	public static Translation2d translation(double x, double y) {
+		return new Translation2d(x, y);
+	}
+
+	/**
 	 * Constructs a {@code Pose2d}.
 	 * 
 	 * @param x the x component of the {@code Pose2d}
@@ -382,6 +393,17 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public static Transform2d transform(double x, double y, double yawInDegrees) {
 		return new Transform2d(x, y, Rotation2d.fromDegrees(yawInDegrees));
+	}
+
+	/**
+	 * Constructs a {@code Rotation2d}.
+	 * 
+	 * @param angleInDegrees the angle of the {@code Rotation2d} in
+	 *        degrees
+	 * @return the constructed {@code Rotation2d}
+	 */
+	public static Rotation2d rotation(double angleInDegrees) {
+		return Rotation2d.fromDegrees(angleInDegrees);
 	}
 
 }

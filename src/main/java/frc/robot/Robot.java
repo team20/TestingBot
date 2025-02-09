@@ -74,6 +74,16 @@ public class Robot extends TimedRobot {
 				.addOption(
 						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
 						CommandComposer.moveForwardBackward2Controllers(6, 0.01, 1));
+		m_testSelector
+				.addOption(
+						"Check PID Constants for Driving (2mx2m Square)", CommandComposer.moveOnSquare(2, 0.01, 1, 16));
+		m_testSelector
+				.addOption(
+						"Check PID Constants for Driving (Unit Circle)",
+						sequence(
+								CommandComposer.moveOnCircle(1, 1, 0.01, 1, 360 * TimedRobot.kDefaultPeriod),
+								CommandComposer.moveOnCircle(1, 2, 0.01, 1, 360 * TimedRobot.kDefaultPeriod),
+								CommandComposer.moveOnCircle(1, 3, 0.01, 1, 360 * TimedRobot.kDefaultPeriod)));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 
@@ -128,7 +138,6 @@ public class Robot extends TimedRobot {
 	 */
 	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
 			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters) {
-
 		return run(() -> {
 			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
 			speeds = speeds.plus(

@@ -5,6 +5,9 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
+import java.util.function.Supplier;
+
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -97,15 +100,74 @@ public class CommandComposer {
 			double angleTolerance) {
 		return sequence(
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance).withDeadline(Commands.waitSeconds(1)),
+						distanceTolerance, angleTolerance).withTimeout(1),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(feetToMeters(distanceInFeet), 0, 0),
 						distanceTolerance, angleTolerance),
 				Commands.waitSeconds(2),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
 						distanceTolerance, angleTolerance),
-				Commands.waitSeconds(2),
+				Commands.waitSeconds(1),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
+						distanceTolerance, angleTolerance),
+				Commands.waitSeconds(1),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
 						distanceTolerance, angleTolerance));
+	}
+
+	/**
+	 * Returns a {@code Command} for moving the robot on a square.
+	 * 
+	 * @param sideLength the side length of the square in meters
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param timeout the maximum amount of the time given to the {@code Command}
+	 * 
+	 * @return a {@code Command} for moving the robot on a circle
+	 */
+	public static Command moveOnSquare(double sideLength, double distanceTolerance,
+			double angleTolerance, double timeout) {
+		return sequence(
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
+						distanceTolerance, angleTolerance).withTimeout(1),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(sideLength, 0, 90),
+						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(sideLength, sideLength, 180),
+						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, sideLength, 270),
+						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0.0, 0),
+						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
+						distanceTolerance, angleTolerance));
+	}
+
+	/**
+	 * Returns a {@code Command} for moving the robot on a circle.
+	 * 
+	 * @param radius the radius of the circle in meters
+	 * @param angularVelocity the angular velocity in degrees per second which
+	 *        describes how quickly the robot is moving on the circle
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param timeout the maximum amount of the time given to the {@code Command}
+	 * 
+	 * @return a {@code Command} for moving the robot on a circle
+	 */
+	public static Command moveOnCircle(double radius, double angularVelocity, double distanceTolerance,
+			double angleTolerance, double timeout) {
+		Supplier<Pose2d> s = new Supplier<Pose2d>() {
+
+			Rotation2d angle = Rotation2d.kZero;
+
+			@Override
+			public Pose2d get() {
+				var p = new Pose2d(translation(radius, 0).rotateBy(angle), angle);
+				angle = angle.plus(rotation(angularVelocity));
+				return p;
+			}
+		};
+		return new DriveCommand2Controllers(m_driveSubsystem, s, true, distanceTolerance, angleTolerance)
+				.withTimeout(timeout);
 	}
 
 	/**

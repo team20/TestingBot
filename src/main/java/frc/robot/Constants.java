@@ -105,14 +105,11 @@ public class Constants {
 		public static final double kDriveP = 5; // TODO: find a good value
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		// public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; //
-		// kDriveMaxSpeed in 1/2 sec
-		public static final double kDriveMaxAcceleration = 1 * kDriveMaxSpeed; // kDriveMaxSpeed in 1 sec
+		public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; // kDriveMaxSpeed in 1/2 sec
 
-		public static final double kTurnP = 0.2; // was 0.005 upto 0.2?
-		// public static final double kTurnP = 0.02; // was 0.005 upto 0.2?
-		public static final double kTurnI = 0; // was 0.003
-		public static final double kTurnD = 0; // 0.0
+		public static final double kTurnP = 5; // TODO: find a good value
+		public static final double kTurnI = 0;
+		public static final double kTurnD = 0;
 		public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1/2 sec
 
 	}
