@@ -96,7 +96,7 @@ public class Robot extends TimedRobot {
 				m_driveSubsystem.driveCommand(
 						() -> -m_driverController.getLeftY(),
 						() -> -m_driverController.getLeftX(),
-						() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
+						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
 						m_driverController.getHID()::getSquareButton));
 
 		m_driverController.button(Button.kSquare)
@@ -104,7 +104,7 @@ public class Robot extends TimedRobot {
 						driveWithAlignmentCommand(
 								() -> -m_driverController.getLeftY(),
 								() -> -m_driverController.getLeftX(),
-								() -> m_driverController.getR2Axis() - m_driverController.getL2Axis(),
+								() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
 								new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2));
 	}
 

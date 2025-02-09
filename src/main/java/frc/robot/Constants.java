@@ -70,18 +70,21 @@ public class Constants {
 		// public static final double kTeleopMaxTurnVoltage = 7.2;
 
 		// public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
-		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
-		public static final double kDriveMinSpeed = .3; // .3 meters per second // TODO: find a good value
+		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
+		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+
+		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
+		public static final double kDriveMinSpeed = 0.0; // 0 meters per second
 		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
-		public static final double kTurnMinAngularSpeed = Math.toRadians(5); // 5 degrees per second
+		public static final double kTurnMinAngularSpeed = Math.toRadians(0); // 0 degrees per second
 		public static final double kDriveMaxVoltage = 12;
 
 		public static final double kDriveGearRatio = 6.12;
 		public static final double kSteerGearRatio = 150.0 / 7;
-		public static final double kWheelDiameter = Units.inchesToMeters(4);
+		public static final double kWheelDiameter = Units.inchesToMeters(3.67);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
-		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio * 0.93;
+		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio;
 
 		// https://docs.wpilib.org/en/latest/docs/software/basic-programming/coordinate-system.html
 		public static final Translation2d kFrontLeftLocation = new Translation2d(0.381, 0.381);

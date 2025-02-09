@@ -3,9 +3,11 @@ package frc.robot;
 import static edu.wpi.first.math.util.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.DriveConstants.*;
+import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.drive.DriveCommand2Controllers;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -94,12 +96,15 @@ public class CommandComposer {
 	public static Command moveForwardBackward2Controllers(double distanceInFeet, double distanceTolerance,
 			double angleTolerance) {
 		return sequence(
-				new DriveCommand2Controllers(m_driveSubsystem, PoseEstimationSubsystem.pose(0.0, 0, 0),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
+						distanceTolerance, angleTolerance).withDeadline(Commands.waitSeconds(1)),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(feetToMeters(distanceInFeet), 0, 0),
 						distanceTolerance, angleTolerance),
-				new DriveCommand2Controllers(m_driveSubsystem,
-						PoseEstimationSubsystem.pose(feetToMeters(distanceInFeet), 0, 0),
+				Commands.waitSeconds(2),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
 						distanceTolerance, angleTolerance),
-				new DriveCommand2Controllers(m_driveSubsystem, PoseEstimationSubsystem.pose(0.0, 0, 0),
+				Commands.waitSeconds(2),
+				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
 						distanceTolerance, angleTolerance));
 	}
 

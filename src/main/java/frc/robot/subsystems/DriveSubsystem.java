@@ -153,7 +153,7 @@ public class DriveSubsystem extends SubsystemBase {
 		if (isFieldRelative)
 			speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
 		SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(speeds);
-		SwerveDriveKinematics.desaturateWheelSpeeds(states, kDriveMaxSpeed);
+		SwerveDriveKinematics.desaturateWheelSpeeds(states, kTeleopDriveMaxSpeed);
 		double[] moduleAngles = { m_frontLeft.getModuleAngle(), m_frontRight.getModuleAngle(),
 				m_backLeft.getModuleAngle(), m_backRight.getModuleAngle() };
 		for (int i = 0; i < states.length; i++) // Optimize target module states
@@ -192,14 +192,14 @@ public class DriveSubsystem extends SubsystemBase {
 		// Get the forward, strafe, and rotation speed, using a deadband on the joystick
 		// input so slight movements don't move the robot
 		double vxMetersPerSecond = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);
-		vxMetersPerSecond = Math.signum(vxMetersPerSecond) * Math.pow(vxMetersPerSecond, 2) * kDriveMaxSpeed;
+		vxMetersPerSecond = Math.signum(vxMetersPerSecond) * Math.pow(vxMetersPerSecond, 2) * kTeleopDriveMaxSpeed;
 
 		double vyMetersPerSecond = MathUtil.applyDeadband(strafeSpeed.getAsDouble(), ControllerConstants.kDeadzone);
-		vyMetersPerSecond = Math.signum(vyMetersPerSecond) * Math.pow(vyMetersPerSecond, 2) * kDriveMaxSpeed;
+		vyMetersPerSecond = Math.signum(vyMetersPerSecond) * Math.pow(vyMetersPerSecond, 2) * kTeleopDriveMaxSpeed;
 
 		double omegaRadiansPerSecond = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
 		omegaRadiansPerSecond = Math.signum(omegaRadiansPerSecond) * Math.pow(omegaRadiansPerSecond, 2)
-				* kTurnMaxAngularSpeed;
+				* kTeleopTurnMaxAngularSpeed;
 
 		return chassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
 	}
@@ -213,9 +213,10 @@ public class DriveSubsystem extends SubsystemBase {
 	 */
 	public static ChassisSpeeds chassisSpeeds(double vxMetersPerSecond, double vyMetersPerSecond,
 			double omegaRadiansPerSecond) {
-		vxMetersPerSecond = MathUtil.clamp(vxMetersPerSecond, -kDriveMaxSpeed, kDriveMaxSpeed);
-		vyMetersPerSecond = MathUtil.clamp(vyMetersPerSecond, -kDriveMaxSpeed, kDriveMaxSpeed);
-		omegaRadiansPerSecond = MathUtil.clamp(omegaRadiansPerSecond, -kTurnMaxAngularSpeed, kTurnMaxAngularSpeed);
+		vxMetersPerSecond = MathUtil.clamp(vxMetersPerSecond, -kTeleopDriveMaxSpeed, kTeleopDriveMaxSpeed);
+		vyMetersPerSecond = MathUtil.clamp(vyMetersPerSecond, -kTeleopDriveMaxSpeed, kTeleopDriveMaxSpeed);
+		omegaRadiansPerSecond = MathUtil
+				.clamp(omegaRadiansPerSecond, -kTeleopTurnMaxAngularSpeed, kTeleopTurnMaxAngularSpeed);
 		return new ChassisSpeeds(vxMetersPerSecond, vyMetersPerSecond, omegaRadiansPerSecond);
 	}
 
