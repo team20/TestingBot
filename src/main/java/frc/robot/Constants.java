@@ -69,10 +69,11 @@ public class Constants {
 		// public static final double kTeleopMaxVoltage = 12;
 		// public static final double kTeleopMaxTurnVoltage = 7.2;
 
-		// public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
 		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
 		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
 
+		// public static final double kDriveMaxSpeed = 5.0; // 5 meters per second //
+		// TODO: find a good value
 		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
 		public static final double kDriveMinSpeed = 0.0; // 0 meters per second
 		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
@@ -105,12 +106,16 @@ public class Constants {
 		public static final double kDriveP = 5; // TODO: find a good value
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; // kDriveMaxSpeed in 1/2 sec
+		public static final double kDriveMaxAcceleration = 1 * kDriveMaxSpeed; // kDriveMaxSpeed in 1 sec
+		// public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; //
+		// kDriveMaxSpeed in 1/2 sec
 
 		public static final double kTurnP = 5; // TODO: find a good value
 		public static final double kTurnI = 0;
 		public static final double kTurnD = 0;
-		public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1/2 sec
+		public static final double kTurnMaxAcceleration = 1 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1 sec
+		// public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed;
+		// // kTurnMaxAngularSpeed in 1/2 sec
 
 	}
 
