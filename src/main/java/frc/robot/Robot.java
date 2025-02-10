@@ -97,14 +97,17 @@ public class Robot extends TimedRobot {
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 		m_testSelector.addOption(
-				"Move 6 Feet Forward and then Backward (using 3 PID Controllers)",
-				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
-		m_testSelector.addOption(
 				"Move around the Red Reef",
 				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 11, 6, 7, 8, 9, 10, 11));
 		m_testSelector.addOption(
 				"Move around the Blue Reef",
 				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+		m_testSelector.addOption(
+				"Move around the Red Reef (Half)",
+				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 6, 7, 8, 7, 6));
+		m_testSelector.addOption(
+				"Move around the Blue Reef (Half)",
+				CommandComposer.visitTags(0.03, 3, transform(1.5, 0, 180), 17, 18, 19, 18, 17));
 		m_testSelector.addOption(
 				"Move around the Red Reef (Complex)",
 				CommandComposer.visitTags(
@@ -113,6 +116,17 @@ public class Robot extends TimedRobot {
 				"Move around the Blue Reef (Complex)",
 				CommandComposer.visitTags(
 						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 22, 17, 18, 19, 20, 21, 22));
+		m_testSelector.addOption(
+				"Move around the Red Reef (Complex, Half)",
+				CommandComposer.visitTags(
+						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 6, 7, 8, 7, 6));
+		m_testSelector.addOption(
+				"Move around the Blue Reef (Complex, Half)",
+				CommandComposer.visitTags(
+						0.03, 3, 10, transform(1.2, 0, 180), transform(0.5, 0, 180), 17, 18, 19, 18, 17));
+		m_testSelector.addOption(
+				"Move 6 Feet Forward and then Backward (using 3 PID Controllers)",
+				CommandComposer.moveForwardBackward3Controllers(6, 0.03, 3));
 		SmartDashboard.putData("Test Selector", m_testSelector);
 
 		SmartDashboard.putData(m_pdh);
