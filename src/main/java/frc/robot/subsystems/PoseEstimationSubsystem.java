@@ -203,10 +203,10 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * @return the calculated {@code ChassisSpeeds} to move from the current
 	 *         {@code Pose2d} toward the target {@code Pose2d}
 	 */
-	public static ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController controllerXY,
+	public ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController controllerXY,
 			PIDController controllerYaw) {
-		Translation2d current2target = targetPose.getTranslation()
-				.minus(currentPose.getTranslation());
+		Translation2d current2target = targetPose.minus(currentPose).getTranslation()
+				.rotateBy(m_driveSubsystem.getPose().getRotation());
 		double velocityX = 0, velocityY = 0;
 		double distance = current2target.getNorm();
 		if (distance > 0) {

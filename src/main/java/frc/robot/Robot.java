@@ -46,7 +46,7 @@ public class Robot extends TimedRobot {
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
 	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
-			pose(kFieldLayout.getFieldLength() / 2, 1.91, 0), 0.01);
+			pose(kFieldLayout.getFieldLength() / 2, 1.91, 180), 0.01);
 	private final PhotonCamera m_camera1 = RobotBase.isSimulation()
 			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_visionSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera");
@@ -107,7 +107,7 @@ public class Robot extends TimedRobot {
 						() -> -m_driverController.getLeftY(),
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
-						m_driverController.getHID()::getSquareButton));
+						() -> !m_driverController.getHID().getSquareButton()));
 
 		m_driverController.button(Button.kSquare)
 				.whileTrue(
