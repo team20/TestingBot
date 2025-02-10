@@ -199,7 +199,7 @@ public class CommandComposer {
 			Rotation2d a = m_poseEstimationSubsystem.angularDisplacement(1);
 			if (a != null)
 				m_driveSubsystem.drive(
-						0, 0, a.getDegrees() * kTurnP,
+						0, 0, a.getRadians() * kTurnP,
 						false);
 		}).withTimeout(1);
 	}
