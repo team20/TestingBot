@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.drive.DriveCommand2Controllers;
@@ -145,16 +146,22 @@ public class CommandComposer {
 	 * Returns a {@code Command} for moving the robot on a circle.
 	 * 
 	 * @param radius the radius of the circle in meters
-	 * @param angularVelocity the angular velocity in degrees per second which
-	 *        describes how quickly the robot is moving on the circle
+	 * @param initialAngularVelocity the initial angular velocity in degrees per
+	 *        second which describes how quickly the robot is moving on the circle
+	 * @param finalAngularVelocity the final angular velocity in degrees per
+	 *        second which describes how quickly the robot is moving on the circle
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
 	 * @param timeout the maximum amount of the time given to the {@code Command}
 	 * 
 	 * @return a {@code Command} for moving the robot on a circle
 	 */
-	public static Command moveOnCircle(double radius, double angularVelocity, double distanceTolerance,
+	public static Command moveOnCircle(double radius, double initialAngularVelocity, double finalAngularVelocity,
+			double distanceTolerance,
 			double angleTolerance, double timeout) {
+
+		Timer timer = new Timer();
+
 		Supplier<Pose2d> s = new Supplier<Pose2d>() {
 
 			Rotation2d angle = Rotation2d.kZero;
@@ -162,12 +169,21 @@ public class CommandComposer {
 			@Override
 			public Pose2d get() {
 				var p = new Pose2d(translation(radius, 0).rotateBy(angle), angle);
+				double progress = timer.get() / timeout;
+				double angularVelocity = progress * finalAngularVelocity + (1 - progress) * initialAngularVelocity;
 				angle = angle.plus(rotation(angularVelocity));
 				return p;
 			}
 		};
-		return new DriveCommand2Controllers(m_driveSubsystem, s, true, distanceTolerance, angleTolerance)
-				.withTimeout(timeout);
+		return new DriveCommand2Controllers(m_driveSubsystem, s, true, distanceTolerance, angleTolerance) {
+
+			@Override
+			public void initialize() {
+				super.initialize();
+				timer.restart();
+			}
+
+		}.withTimeout(timeout);
 	}
 
 	/**
