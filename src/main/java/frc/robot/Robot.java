@@ -18,6 +18,7 @@ import org.photonvision.PhotonCamera;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -47,7 +48,7 @@ public class Robot extends TimedRobot {
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
 	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
-			pose(kFieldLayout.getFieldLength() / 2, 1.91, 180), 0.01);
+			pose(kFieldLayout.getFieldLength() / 2 + 2.5, 1.91 + .3, 180), 0.01);
 	private final PhotonCamera m_camera1 = RobotBase.isSimulation()
 			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_visionSimulator, 3, 0.1)
 			: new PhotonCamera("Cool camera");
@@ -87,14 +88,12 @@ public class Robot extends TimedRobot {
 						CommandComposer.moveForwardBackward2Controllers(6, 0.01, 1));
 		m_testSelector
 				.addOption(
-						"Check PID Constants for Driving (2mx2m Square)", CommandComposer.moveOnSquare(2, 0.01, 1, 16));
+						"Check PID Constants for Driving (5'x5' Square)",
+						CommandComposer.moveOnSquare(Units.feetToMeters(5), 0.01, 1, 16));
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (Unit Circle)",
-						sequence(
-								CommandComposer.moveOnCircle(1, 1, 0.01, 1, 360 * TimedRobot.kDefaultPeriod),
-								CommandComposer.moveOnCircle(1, 2, 0.01, 1, 360 * TimedRobot.kDefaultPeriod),
-								CommandComposer.moveOnCircle(1, 3, 0.01, 1, 360 * TimedRobot.kDefaultPeriod)));
+						CommandComposer.moveOnCircle(1, 1, 3, 0.01, 1, 10));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 		m_testSelector.addOption(
