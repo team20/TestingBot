@@ -54,7 +54,7 @@ public class Constants {
 
 		// Make sure these are tuned (can do with SysId)
 		// public static final double kP = 0.09;
-		public static final double kP = 0.05; // TODO: find a good value
+		public static final double kP = 0.03; // TODO: find a good value
 		public static final double kI = 0.0;
 		public static final double kD = 0.1 * kP; // TODO: find a good value
 		// public static final double kD = 0;
