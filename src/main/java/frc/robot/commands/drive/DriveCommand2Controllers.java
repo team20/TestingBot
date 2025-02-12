@@ -203,6 +203,7 @@ public class DriveCommand2Controllers extends Command {
 			m_targetPose = m_targetPoseSupplier.get();
 		} catch (Exception e) {
 			e.printStackTrace();
+			m_targetPose = pose;
 		}
 		m_controllerXY.setTolerance(m_distanceTolerance);
 		m_controllerYaw.setTolerance(m_angleTolerance);
@@ -216,6 +217,16 @@ public class DriveCommand2Controllers extends Command {
 	 */
 	@Override
 	public void execute() {
+		m_driveSubsystem.drive(chassisSpeeds(), true);
+	}
+
+	/**
+	 * Calculates the {@code ChassisSpeeds} to move the robot toward the target.
+	 * 
+	 * @return the calculated {@code ChassisSpeeds} to move the robot toward the
+	 *         target
+	 */
+	public ChassisSpeeds chassisSpeeds() {
 		var currentPose = m_poseSupplier.get();
 		if (m_continuousTargeting)
 			try {
@@ -223,20 +234,7 @@ public class DriveCommand2Controllers extends Command {
 			} catch (Exception e) {
 				// e.printStackTrace();
 			}
-		m_driveSubsystem.drive(chassisSpeeds(currentPose, m_targetPose), true);
-	}
-
-	/**
-	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
-	 * toward the target {@code Pose2d}.
-	 * 
-	 * @param currentPose the current {@code Pose2d}
-	 * @param targetPose the target {@code Pose2d}
-	 * @return the calculated {@code ChassisSpeeds} to move from the current
-	 *         {@code Pose2d} toward the target {@code Pose2d}
-	 */
-	public ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose) {
-		Translation2d current2target = targetPose.getTranslation()
+		Translation2d current2target = m_targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
 		double distance = current2target.getNorm();
@@ -247,7 +245,7 @@ public class DriveCommand2Controllers extends Command {
 			velocityY = speed * current2target.getAngle().getSin();
 		}
 		double angularVelocityRadiansPerSecond = m_controllerYaw
-				.calculate(currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
+				.calculate(currentPose.getRotation().getRadians(), m_targetPose.getRotation().getRadians());
 		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}

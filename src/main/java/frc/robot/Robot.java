@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.*;
 import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
@@ -15,6 +14,7 @@ import java.util.function.DoubleSupplier;
 import org.littletonrobotics.urcl.URCL;
 import org.photonvision.PhotonCamera;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.ControllerConstants.Button;
+import frc.robot.commands.drive.DriveCommand2Controllers;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -64,6 +65,9 @@ public class Robot extends TimedRobot {
 		m_autoSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
 		SmartDashboard.putData("Auto Selector", m_autoSelector);
 
+		double distanceTolerance = 0.01;
+		double angleToleranceInDegrees = 1.0;
+
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check DriveSubsystem (Robot-Oriented F/B/L/R/LR/RR)", m_driveSubsystem.testCommand());
@@ -74,15 +78,16 @@ public class Robot extends TimedRobot {
 		m_testSelector
 				.addOption(
 						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
-						CommandComposer.moveForwardBackward2Controllers(6, 0.01, 1));
+						CommandComposer.moveForwardBackward2Controllers(6, distanceTolerance, angleToleranceInDegrees));
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (5'x5' Square)",
-						CommandComposer.moveOnSquare(Units.feetToMeters(5), 0.01, 1, 16));
+						CommandComposer
+								.moveOnSquare(Units.feetToMeters(5), distanceTolerance, angleToleranceInDegrees, 16));
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (Unit Circle)",
-						CommandComposer.moveOnCircle(1, 1, 3, 0.01, 1, 10));
+						CommandComposer.moveOnCircle(1, 1, 3, distanceTolerance, angleToleranceInDegrees, 10));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 
@@ -114,7 +119,7 @@ public class Robot extends TimedRobot {
 								() -> -m_driverController.getLeftY(),
 								() -> -m_driverController.getLeftX(),
 								() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
-								new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2));
+								new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2, 0.03, 3));
 	}
 
 	/**
@@ -130,20 +135,30 @@ public class Robot extends TimedRobot {
 	 * @param robotToTag the {@code Tranform2d} representing the pose of the
 	 *        closest {@code AprilTag} relative to the robot when the robot is
 	 *        aligned
-	 * @param isFieldRelative {@code Supplier} for determining whether or not
-	 *        driving should be field relative.
+	 * @param distanceThresholdInMeters the maximum distance (in meters) within
+	 *        which {@code AprilTag}s are considered
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 * @return a {@code Command} to automatically align the robot to the closest tag
 	 *         while driving the robot with joystick input
 	 */
 	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters) {
-		return run(() -> {
-			ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
-			speeds = speeds.plus(
-					m_poseEstimationSubsystem
-							.chassisSpeedsTowardClosestTag(robotToTag, distanceThresholdInMeters));
-			m_driveSubsystem.drive(speeds, true);
-		});
+			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters, double distanceTolerance,
+			double angleToleranceInDegrees) {
+		return new DriveCommand2Controllers(m_driveSubsystem, () -> {
+			Pose2d closestTagPose = m_poseEstimationSubsystem.closestTagPose(180, distanceThresholdInMeters);
+			if (closestTagPose == null)
+				return m_driveSubsystem.getPose();
+			return m_poseEstimationSubsystem.odometryCentricPose(closestTagPose.plus(robotToTag));
+		}, false, distanceTolerance, angleToleranceInDegrees) {
+
+			@Override
+			public ChassisSpeeds chassisSpeeds() {
+				ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
+				return speeds.plus(super.chassisSpeeds());
+			}
+
+		};
 	}
 
 	@Override

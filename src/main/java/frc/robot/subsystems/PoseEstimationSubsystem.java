@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
 import static frc.robot.Constants.*;
-import static frc.robot.Constants.DriveConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,14 +14,12 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -79,20 +76,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	private final StructPublisher<Pose2d> m_estimatedPosePublisher;
 
 	/**
-	 * The {@code PIDController} for controlling the robot in the x and y
-	 * dimensions in meters (input: error in meters, output: velocity in meters per
-	 * second).
-	 */
-	private PIDController m_controllerXY;
-
-	/**
-	 * The {@code PIDController} for controlling the robot in the yaw
-	 * dimension in radians (input: error in radians, output: velocity in radians
-	 * per second).
-	 */
-	private PIDController m_controllerYaw;
-
-	/**
 	 * Constructs a {@code PoseEstimationSubsystem}.
 	 * 
 	 * @param driveSubsystem {@code DriveSubsystem} to be used by the
@@ -113,9 +96,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		m_estimatedPosePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Pose@PoseEstimationSubsystem", Pose2d.struct)
 				.publish();
-		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
-		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
-		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
 	}
 
 	/**
@@ -169,54 +149,15 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Calculates the {@code ChassisSpeeds} to move the robot toward the closest
-	 * {@code AprilTag}.
+	 * Returns the odometry-centric {@code Pose2d} that corresponds to the specified
+	 * field-centric {@code Pose2d}.
 	 * 
-	 * @param robotToTag the {@code Tranform2d} representing the pose of the
-	 *        {@code AprilTag} relative to the robot when the robot is aligned
-	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the calculated {@code ChassisSpeeds} to move the robot toward the
-	 *         closest {@code AprilTag}
+	 * @param fieldCentricPose a field-centric {@code Pose2d}
+	 * @return the odometry-centric {@code Pose2d} that corresponds to the specified
+	 *         field-centric {@code Pose2d}
 	 */
-	public ChassisSpeeds chassisSpeedsTowardClosestTag(Transform2d robotToTag, double distanceThresholdInMeters) {
-		var currentRobotPose = getEstimatedPose();
-		var closestTagPose = closestTagPose(180, distanceThresholdInMeters);
-		if (closestTagPose == null)
-			return new ChassisSpeeds();
-		var targetRobotPose = closestTagPose.plus(robotToTag);
-		return chassisSpeeds(currentRobotPose, targetRobotPose, m_controllerXY, m_controllerYaw);
-	}
-
-	/**
-	 * Calculates the {@code ChassisSpeeds} to move from the current {@code Pose2d}
-	 * toward the target {@code Pose2d}.
-	 * 
-	 * @param currentPose the current {@code Pose2d}
-	 * @param targetPose the target {@code Pose2d}
-	 * @param controllerXY the {@code PIDController} for controlling the robot in
-	 *        the x and y dimensions in meters (input: error in meters, output:
-	 *        velocity in meters per second)
-	 * @param controllerYaw the {@code PIDController} for controlling the robot in
-	 *        the yaw dimension in radians (input: error in radians, output:
-	 *        velocity in radians per second)
-	 * @return the calculated {@code ChassisSpeeds} to move from the current
-	 *         {@code Pose2d} toward the target {@code Pose2d}
-	 */
-	public ChassisSpeeds chassisSpeeds(Pose2d currentPose, Pose2d targetPose, PIDController controllerXY,
-			PIDController controllerYaw) {
-		Translation2d current2target = targetPose.minus(currentPose).getTranslation()
-				.rotateBy(m_driveSubsystem.getPose().getRotation());
-		double velocityX = 0, velocityY = 0;
-		double distance = current2target.getNorm();
-		if (distance > 0) {
-			double speed = Math.abs(controllerXY.calculate(distance, 0));
-			velocityX = speed * current2target.getAngle().getCos();
-			velocityY = speed * current2target.getAngle().getSin();
-		}
-		double angularVelocityRadiansPerSecond = controllerYaw
-				.calculate(currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
-		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
+	public Pose2d odometryCentricPose(Pose2d fieldCentricPose) {
+		return m_driveSubsystem.getPose().plus(fieldCentricPose.minus(getEstimatedPose()));
 	}
 
 	/**

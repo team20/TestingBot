@@ -157,8 +157,7 @@ public class CommandComposer {
 	 * @return a {@code Command} for moving the robot on a circle
 	 */
 	public static Command moveOnCircle(double radius, double initialAngularVelocity, double finalAngularVelocity,
-			double distanceTolerance,
-			double angleTolerance, double timeout) {
+			double distanceTolerance, double angleTolerance, double timeout) {
 
 		Timer timer = new Timer();
 
