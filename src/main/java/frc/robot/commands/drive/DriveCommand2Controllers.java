@@ -238,11 +238,12 @@ public class DriveCommand2Controllers extends Command {
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
 		double distance = current2target.getNorm();
+		double speed = Math.abs(m_controllerXY.calculate(distance, 0));
 		if (distance > 0) {
-			double speed = Math.abs(m_controllerXY.calculate(distance, 0));
 			speed = applyThreshold(speed, kDriveMinSpeed);
-			velocityX = speed * current2target.getAngle().getCos();
-			velocityY = speed * current2target.getAngle().getSin();
+			var angle = current2target.getAngle();
+			velocityX = speed * angle.getCos();
+			velocityY = speed * angle.getSin();
 		}
 		double angularVelocityRadiansPerSecond = m_controllerYaw
 				.calculate(currentPose.getRotation().getRadians(), m_targetPose.getRotation().getRadians());

@@ -101,13 +101,10 @@ public class CommandComposer {
 			double angleTolerance) {
 		return sequence(
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance).withTimeout(1),
+						distanceTolerance, angleTolerance),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(feetToMeters(distanceInFeet), 0, 0),
 						distanceTolerance, angleTolerance),
 				Commands.waitSeconds(2),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance),
-				Commands.waitSeconds(1),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
 						distanceTolerance, angleTolerance),
 				Commands.waitSeconds(1),
