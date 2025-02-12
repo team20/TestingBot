@@ -87,7 +87,7 @@ public class Robot extends TimedRobot {
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (Unit Circle)",
-						CommandComposer.moveOnCircle(1, 1, 3, distanceTolerance, angleToleranceInDegrees, 10));
+						CommandComposer.moveOnCircle(1, 8, 16, distanceTolerance, angleToleranceInDegrees, 10, 60));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 
@@ -150,7 +150,7 @@ public class Robot extends TimedRobot {
 			if (closestTagPose == null)
 				return m_driveSubsystem.getPose();
 			return m_poseEstimationSubsystem.odometryCentricPose(closestTagPose.plus(robotToTag));
-		}, false, distanceTolerance, angleToleranceInDegrees) {
+		}, distanceTolerance, angleToleranceInDegrees) {
 
 			@Override
 			public ChassisSpeeds chassisSpeeds() {

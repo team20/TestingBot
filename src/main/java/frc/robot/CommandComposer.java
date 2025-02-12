@@ -5,14 +5,14 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
-import java.util.function.Supplier;
+import java.util.LinkedList;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.drive.DriveCommand2Controllers;
+import frc.robot.commands.drive.PathDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PoseEstimationSubsystem;
 
@@ -143,43 +143,30 @@ public class CommandComposer {
 	 * Returns a {@code Command} for moving the robot on a circle.
 	 * 
 	 * @param radius the radius of the circle in meters
-	 * @param initialAngularVelocity the initial angular velocity in degrees per
-	 *        second which describes how quickly the robot is moving on the circle
-	 * @param finalAngularVelocity the final angular velocity in degrees per
-	 *        second which describes how quickly the robot is moving on the circle
+	 * @param initialAngularIncrement the initial angular increment in degrees which
+	 *        describes how quickly the robot to move on the circle
+	 * @param finalAngularIncrement the final angular increment in degrees which
+	 *        describes how quickly the robot to move on the circle
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param timeout the maximum amount of the time given to the {@code Command}
+	 * @param intermediateToleranceRatio the ratio to apply to the distance and
+	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param poseCount the number of {@code Pose2d}s on the circle
 	 * 
 	 * @return a {@code Command} for moving the robot on a circle
 	 */
-	public static Command moveOnCircle(double radius, double initialAngularVelocity, double finalAngularVelocity,
-			double distanceTolerance, double angleTolerance, double timeout) {
-
-		Timer timer = new Timer();
-
-		Supplier<Pose2d> s = new Supplier<Pose2d>() {
-
-			Rotation2d angle = Rotation2d.kZero;
-
-			@Override
-			public Pose2d get() {
-				var p = new Pose2d(translation(radius, 0).rotateBy(angle), angle);
-				double progress = timer.get() / timeout;
-				double angularVelocity = progress * finalAngularVelocity + (1 - progress) * initialAngularVelocity;
-				angle = angle.plus(rotation(angularVelocity));
-				return p;
-			}
-		};
-		return new DriveCommand2Controllers(m_driveSubsystem, s, true, distanceTolerance, angleTolerance) {
-
-			@Override
-			public void initialize() {
-				super.initialize();
-				timer.restart();
-			}
-
-		}.withTimeout(timeout);
+	public static Command moveOnCircle(double radius, double initialAngularIncrement, double finalAngularIncrement,
+			double distanceTolerance, double angleTolerance, double intermediateToleranceRatio, int poseCount) {
+		Rotation2d angle = Rotation2d.kZero;
+		var l = new LinkedList<Pose2d>();
+		for (double i = 0; i < poseCount; i++) {
+			l.add(new Pose2d(translation(radius, 0).rotateBy(angle), angle));
+			double progress = i / poseCount;
+			double angularVelocity = progress * finalAngularIncrement + (1 - progress) * initialAngularIncrement;
+			angle = angle.plus(rotation(angularVelocity));
+		}
+		return new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, intermediateToleranceRatio,
+				l.toArray(new Pose2d[0]));
 	}
 
 	/**

@@ -14,9 +14,8 @@ import frc.robot.subsystems.DriveSubsystem;
 
 /**
  * This {@code DriveCommand2Controllers} aims to maneuver the robot to a certain
- * {@code Pose2d}.
- * It utilizes two {@code ProfiledPIDController}s to precisely control the
- * robot in the x, y, and yaw dimensions.
+ * {@code Pose2d}. It utilizes two {@code ProfiledPIDController}s to precisely
+ * control the robot in the x, y, and yaw dimensions.
  * 
  * @author Jeong-Hyon Hwang (jhhbrown@gmail.com)
  * @author Andrew Hwang (u.andrew.h@gmail.com)
@@ -73,13 +72,6 @@ public class DriveCommand2Controllers extends Command {
 	protected double m_angleTolerance;
 
 	/**
-	 * A boolean indicating whether or not the target needs to be determined
-	 * continuously or only once at the commencement of the
-	 * {@code DriveCommand2Controllers}.
-	 */
-	protected boolean m_continuousTargeting;
-
-	/**
 	 * Constructs a new {@code DriveCommand2Controllers} whose purpose is to move
 	 * the
 	 * robot to a certain {@code Pose2d}.
@@ -91,7 +83,7 @@ public class DriveCommand2Controllers extends Command {
 	 */
 	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Pose2d targetPose, double distanceTolerance,
 			double angleToleranceInDegrees) {
-		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, false, distanceTolerance,
+		this(driveSubsystem, () -> driveSubsystem.getPose(), () -> targetPose, distanceTolerance,
 				angleToleranceInDegrees);
 	}
 
@@ -106,16 +98,12 @@ public class DriveCommand2Controllers extends Command {
 	 *        {@code DriveCommand2Controllers} (i.e., when the scheduler
 	 *        begins to periodically execute this
 	 *        {@code DriveCommand2Controllers})
-	 * @param continuousTargeting a boolean value indicating whether or not the
-	 *        targetPoseSupplier needs to be used continuously or only once at the
-	 *        commencement of the {@code DriveCommand2Controllers}.
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 */
 	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> targetPoseSupplier,
-			boolean continuousTargeting, double distanceTolerance, double angleToleranceInDegrees) {
-		this(driveSubsystem, () -> driveSubsystem.getPose(), targetPoseSupplier, continuousTargeting,
-				distanceTolerance,
+			double distanceTolerance, double angleToleranceInDegrees) {
+		this(driveSubsystem, () -> driveSubsystem.getPose(), targetPoseSupplier, distanceTolerance,
 				angleToleranceInDegrees);
 	}
 
@@ -133,16 +121,12 @@ public class DriveCommand2Controllers extends Command {
 	 *        {@code DriveCommand2Controllers} (i.e., when the scheduler
 	 *        begins to periodically execute this
 	 *        {@code DriveCommand2Controllers})
-	 * @param continuousTargeting a boolean value indicating whether or not the
-	 *        targetPoseSupplier needs to be used continuously or only once at the
-	 *        commencement of the {@code DriveCommand2Controllers}.
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 */
 	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
-			Supplier<Pose2d> targetPoseSupplier, boolean continuousTargeting, double distanceTolerance,
-			double angleToleranceInDegrees) {
-		this(driveSubsystem, poseSupplier, targetPoseSupplier, continuousTargeting, distanceTolerance,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleToleranceInDegrees) {
+		this(driveSubsystem, poseSupplier, targetPoseSupplier, distanceTolerance,
 				angleToleranceInDegrees,
 				new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
 						new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration)),
@@ -165,9 +149,6 @@ public class DriveCommand2Controllers extends Command {
 	 *        {@code DriveCommand2Controllers} (i.e., when the scheduler
 	 *        begins to periodically execute this
 	 *        {@code DriveCommand2Controllers})
-	 * @param continuousTargeting a boolean value indicating whether or not the
-	 *        targetPoseSupplier needs to be used continuously or only once at the
-	 *        commencement of the {@code DriveCommand2Controllers}
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
 	 * @param controllerXY the {@code ProfiledPIDController} for controlling the
@@ -177,12 +158,11 @@ public class DriveCommand2Controllers extends Command {
 	 * 
 	 */
 	public DriveCommand2Controllers(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
-			Supplier<Pose2d> targetPoseSupplier, boolean continuousTargeting, double distanceTolerance,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance,
 			double angleToleranceInDegrees, ProfiledPIDController controllerXY, ProfiledPIDController controllerYaw) {
 		m_driveSubsystem = driveSubsystem;
 		m_poseSupplier = poseSupplier;
 		m_targetPoseSupplier = targetPoseSupplier;
-		m_continuousTargeting = continuousTargeting;
 		m_distanceTolerance = distanceTolerance;
 		m_angleTolerance = Math.toRadians(angleToleranceInDegrees);
 		m_controllerXY = controllerXY;
@@ -228,22 +208,17 @@ public class DriveCommand2Controllers extends Command {
 	 */
 	public ChassisSpeeds chassisSpeeds() {
 		var currentPose = m_poseSupplier.get();
-		if (m_continuousTargeting)
-			try {
-				m_targetPose = m_targetPoseSupplier.get();
-			} catch (Exception e) {
-				// e.printStackTrace();
-			}
 		Translation2d current2target = m_targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
-		double distance = current2target.getNorm();
-		double speed = Math.abs(m_controllerXY.calculate(distance, 0));
-		if (distance > 0) {
+		try {
+			double distance = current2target.getNorm();
+			double speed = Math.abs(m_controllerXY.calculate(distance, 0));
 			speed = applyThreshold(speed, kDriveMinSpeed);
 			var angle = current2target.getAngle();
 			velocityX = speed * angle.getCos();
 			velocityY = speed * angle.getSin();
+		} catch (Exception e) {
 		}
 		double angularVelocityRadiansPerSecond = m_controllerYaw
 				.calculate(currentPose.getRotation().getRadians(), m_targetPose.getRotation().getRadians());
