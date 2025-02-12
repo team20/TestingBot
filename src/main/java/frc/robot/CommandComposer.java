@@ -107,13 +107,10 @@ public class CommandComposer {
 			double angleTolerance) {
 		return sequence(
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance).withTimeout(1),
+						distanceTolerance, angleTolerance),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(feetToMeters(distanceInFeet), 0, 0),
 						distanceTolerance, angleTolerance),
 				Commands.waitSeconds(2),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance),
-				Commands.waitSeconds(1),
 				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
 						distanceTolerance, angleTolerance),
 				Commands.waitSeconds(1),
@@ -163,8 +160,7 @@ public class CommandComposer {
 	 * @return a {@code Command} for moving the robot on a circle
 	 */
 	public static Command moveOnCircle(double radius, double initialAngularVelocity, double finalAngularVelocity,
-			double distanceTolerance,
-			double angleTolerance, double timeout) {
+			double distanceTolerance, double angleTolerance, double timeout) {
 
 		Timer timer = new Timer();
 

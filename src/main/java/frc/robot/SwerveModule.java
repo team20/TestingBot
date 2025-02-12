@@ -7,7 +7,6 @@ package frc.robot;
 import static frc.robot.Constants.DriveConstants.*;
 
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.sim.SparkMaxSim;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -19,31 +18,20 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /**
  * Contains all the hardware and controllers for a swerve module.
  */
 public class SwerveModule {
 	private final PIDController m_steerController = new PIDController(kP, kI, kD);
-	private final CANcoder m_CANCoder;
-	private final SparkMax m_driveMotor;
-	private final SparkMaxSim m_driveMotorSim;
-	private final SparkMax m_steerMotor;
-	private final SparkMaxSim m_steerMotorSim;
-	private final DCMotorSim m_driveMotorModel;
-	private final DCMotorSim m_steerMotorModel;
+	protected final CANcoder m_CANCoder;
+	protected final SparkMax m_driveMotor;
+	protected final SparkMax m_steerMotor;
 
 	public SwerveModule(int canId, int drivePort, int steerPort) {
 		m_CANCoder = new CANcoder(canId);
 		m_driveMotor = new SparkMax(drivePort, MotorType.kBrushless);
-		m_driveMotorSim = new SparkMaxSim(m_driveMotor, DCMotor.getNEO(1));
 		m_steerMotor = new SparkMax(steerPort, MotorType.kBrushless);
-		m_steerMotorSim = new SparkMaxSim(m_steerMotor, DCMotor.getNEO(1));
 
 		var config = new SparkMaxConfig();
 		config.idleMode(IdleMode.kBrake).voltageCompensation(12);
@@ -62,18 +50,6 @@ public class SwerveModule {
 		m_steerMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
 		m_steerController.enableContinuousInput(0, 360);
-		if (RobotBase.isSimulation()) {
-			m_driveMotorModel = new DCMotorSim(
-					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), kA / (2 * Math.PI)),
-					DCMotor.getKrakenX60(1).withReduction(kDriveGearRatio));
-			m_steerMotorModel = new DCMotorSim(
-					LinearSystemId.createDCMotorSystem(kV / (2 * Math.PI), kA / (2 * Math.PI)),
-					DCMotor.getKrakenX60(1));
-		} else {
-			m_driveMotorModel = null;
-			m_steerMotorModel = null;
-		}
-
 	}
 
 	/**
@@ -155,7 +131,6 @@ public class SwerveModule {
 		m_driveMotor.setVoltage(state.speedMetersPerSecond);
 		double turnPower = m_steerController.calculate(getModuleAngle(), state.angle.getDegrees());
 		m_steerMotor.setVoltage(turnPower);
-		updateSim();
 	}
 
 	/**
@@ -165,29 +140,6 @@ public class SwerveModule {
 	 */
 	public void setAngle(double angle) {
 		m_steerMotor.setVoltage(m_steerController.calculate(getModuleAngle(), angle));
-		updateSim();
-	}
-
-	/**
-	 * Updates this {@code SwerveModule} for simulations.
-	 */
-	private void updateSim() {
-		if (RobotBase.isSimulation()) {
-			m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * kDriveMaxVoltage);
-			m_driveMotorModel.update(TimedRobot.kDefaultPeriod);
-			m_driveMotorSim
-					.iterate(m_driveMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, TimedRobot.kDefaultPeriod);
-			m_driveMotorSim.setPosition(m_driveMotorModel.getAngularPositionRotations());
-			m_driveMotorSim.setVelocity(m_driveMotorModel.getAngularVelocityRPM());
-
-			m_steerMotorModel.setInputVoltage(m_steerMotorSim.getAppliedOutput() * kDriveMaxVoltage);
-			m_steerMotorModel.update(TimedRobot.kDefaultPeriod);
-			m_steerMotorSim
-					.iterate(m_steerMotorModel.getAngularVelocityRPM(), kDriveMaxVoltage, TimedRobot.kDefaultPeriod);
-			var encoderSimState = m_CANCoder.getSimState();
-			encoderSimState.setRawPosition(m_steerMotorModel.getAngularPositionRotations() / kSteerGearRatio);
-			encoderSimState.setVelocity(m_steerMotorModel.getAngularVelocityRPM() / kSteerGearRatio);
-		}
 	}
 
 }
