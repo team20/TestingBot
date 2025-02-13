@@ -155,12 +155,13 @@ public class CommandComposer {
 	 * 
 	 * @return a {@code Command} for moving the robot on a circle
 	 */
-	public static Command moveOnCircle(double radius, double initialAngularIncrement, double finalAngularIncrement,
+	public static Command moveOnEllipse(double radius, double initialAngularIncrement, double finalAngularIncrement,
 			double distanceTolerance, double angleTolerance, double intermediateToleranceRatio, int poseCount) {
 		Rotation2d angle = Rotation2d.kZero;
 		var l = new LinkedList<Pose2d>();
 		for (double i = 0; i < poseCount; i++) {
-			l.add(new Pose2d(translation(radius, 0).rotateBy(angle), angle));
+			var t = translation(radius, 0).rotateBy(angle);
+			l.add(new Pose2d(translation(t.getX(), t.getY() / 2), angle));
 			double progress = i / poseCount;
 			double angularVelocity = progress * finalAngularIncrement + (1 - progress) * initialAngularIncrement;
 			angle = angle.plus(rotation(angularVelocity));
