@@ -6,10 +6,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 
@@ -29,18 +30,18 @@ public class PathDriveCommand extends Command {
 	protected DriveSubsystem m_driveSubsystem;
 
 	/**
-	 * The {@code PIDController} for controlling the robot in the x and y
+	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
 	 * dimensions in meters (input: error in meters, output: velocity in meters per
 	 * second).
 	 */
-	protected PIDController m_controllerXY;
+	protected ProfiledPIDController m_controllerXY;
 
 	/**
-	 * The {@code PIDController} for controlling the robot in the yaw dimension in
-	 * radians (input: error in radians, output: velocity in radians
+	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
+	 * dimension in radians (input: error in radians, output: velocity in radians
 	 * per second).
 	 */
-	protected PIDController m_controllerYaw;
+	protected ProfiledPIDController m_controllerYaw;
 
 	/**
 	 * The distance error in meters which is tolerable.
@@ -115,8 +116,11 @@ public class PathDriveCommand extends Command {
 		m_distanceTolerance = distanceTolerance;
 		m_angleTolerance = Math.toRadians(angleToleranceInDegrees);
 		m_intermediateToleranceRatio = intermediateToleranceRatio;
-		m_controllerXY = new PIDController(kDriveP, kDriveI, kDriveD);
-		m_controllerYaw = new PIDController(kTurnP, kTurnI, kTurnD);
+		m_controllerXY = new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
+				new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration));
+		m_controllerYaw = new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
+				new TrapezoidProfile.Constraints(kTurnMaxAngularSpeed,
+						kTurnMaxAcceleration));
 		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
 		addRequirements(m_driveSubsystem);
 	}
@@ -129,6 +133,9 @@ public class PathDriveCommand extends Command {
 	@Override
 	public void initialize() {
 		setTargetPose(0);
+		Pose2d pose = m_driveSubsystem.getPose();
+		m_controllerXY.reset(m_targetPose.minus(pose).getTranslation().getNorm());
+		m_controllerYaw.reset(pose.getRotation().getRadians());
 	}
 
 	/**
@@ -211,12 +218,26 @@ public class PathDriveCommand extends Command {
 	 */
 	@Override
 	public boolean isFinished() {
-		if (m_controllerXY.atSetpoint() && m_controllerYaw.atSetpoint()) {
+		if (alignedTo(m_targetPose)) {
 			if (m_targetPoseIndex == m_targetPoseSuppliers.size() - 1)
 				return true;
 			setTargetPose(m_targetPoseIndex + 1);
 		}
 		return false;
+	}
+
+	/**
+	 * Determines whether or not the robot is sufficiently aligned to the specified
+	 * target {@code Pose2d}.
+	 * 
+	 * @param targetPose the target {@code Pose2d}
+	 * @return {@code true} if the robot is sufficiently aligned to the specified
+	 *         target {@code Pose2d}; {@code false} otherwise
+	 */
+	boolean alignedTo(Pose2d targetPose) {
+		var diff = targetPose.minus(m_driveSubsystem.getPose());
+		return diff.getTranslation().getNorm() < m_controllerXY.getPositionTolerance()
+				&& Math.abs(diff.getRotation().getRadians()) < m_controllerYaw.getPositionTolerance();
 	}
 
 	/**

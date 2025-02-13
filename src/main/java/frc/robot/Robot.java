@@ -65,8 +65,8 @@ public class Robot extends TimedRobot {
 		m_autoSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
 		SmartDashboard.putData("Auto Selector", m_autoSelector);
 
-		double distanceTolerance = 0.01;
-		double angleToleranceInDegrees = 1.0;
+		double distanceTolerance = 0.03;
+		double angleToleranceInDegrees = 2.0;
 
 		m_testSelector
 				.addOption(
@@ -75,12 +75,12 @@ public class Robot extends TimedRobot {
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (Unit Circle)",
-						CommandComposer.moveOnCircle(1, 16, 32, distanceTolerance, angleToleranceInDegrees, 32, 60));
+						CommandComposer.moveOnCircle(1, 8, 16, distanceTolerance, angleToleranceInDegrees, 32, 60));
 		m_testSelector
 				.addOption(
 						"Quickly Align to AprilTags 7 and 8",
 						CommandComposer.alignToTags(
-								distanceTolerance, angleToleranceInDegrees, 1, transform(0.8, 0, 180),
+								distanceTolerance, angleToleranceInDegrees, 16, transform(0.8, 0, 180),
 								transform(1.3, 0, 180), 7, 8, 7, 8, 7));
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
