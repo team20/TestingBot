@@ -15,7 +15,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.commands.drive.DriveCommand2Controllers;
+import frc.robot.commands.drive.DriveCommand;
 import frc.robot.commands.drive.PathDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -104,16 +104,13 @@ public class CommandComposer {
 	public static Command moveForwardBackward2Controllers(double distanceInFeet, double distanceTolerance,
 			double angleTolerance) {
 		return sequence(
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(feetToMeters(distanceInFeet), 0, 0),
-						distanceTolerance, angleTolerance),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(0.0, 0, 0)),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance,
+						pose(feetToMeters(distanceInFeet), 0, 0)),
 				Commands.waitSeconds(2),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(0.0, 0, 0)),
 				Commands.waitSeconds(1),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance));
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(0.0, 0, 0)));
 	}
 
 	/**
@@ -129,18 +126,17 @@ public class CommandComposer {
 	public static Command moveOnSquare(double sideLength, double distanceTolerance,
 			double angleTolerance, double timeout) {
 		return sequence(
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance).withTimeout(1),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(sideLength, 0, 90),
-						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(sideLength, sideLength, 180),
-						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, sideLength, 270),
-						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0.0, 0),
-						distanceTolerance, angleTolerance).withTimeout(timeout / 4),
-				new DriveCommand2Controllers(m_driveSubsystem, pose(0.0, 0, 0),
-						distanceTolerance, angleTolerance));
+				new DriveCommand(m_driveSubsystem,
+						distanceTolerance, angleTolerance, pose(0.0, 0, 0)).withTimeout(1),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(sideLength, 0, 90))
+						.withTimeout(timeout / 4),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(sideLength, sideLength, 180))
+						.withTimeout(timeout / 4),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(0.0, sideLength, 270))
+						.withTimeout(timeout / 4),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(0.0, 0.0, 0))
+						.withTimeout(timeout / 4),
+				new DriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, pose(0.0, 0, 0)));
 	}
 
 	/**

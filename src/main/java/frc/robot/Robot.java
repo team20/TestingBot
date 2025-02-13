@@ -31,7 +31,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.ControllerConstants.Button;
-import frc.robot.commands.drive.DriveCommand2Controllers;
+import frc.robot.commands.drive.DriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -151,12 +151,12 @@ public class Robot extends TimedRobot {
 	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
 			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters, double distanceTolerance,
 			double angleToleranceInDegrees) {
-		return new DriveCommand2Controllers(m_driveSubsystem, () -> {
+		return new DriveCommand(m_driveSubsystem, distanceTolerance, angleToleranceInDegrees, () -> {
 			Pose2d closestTagPose = m_poseEstimationSubsystem.closestTagPose(180, distanceThresholdInMeters);
 			if (closestTagPose == null)
 				return m_driveSubsystem.getPose();
 			return m_poseEstimationSubsystem.odometryCentricPose(closestTagPose.plus(robotToTag));
-		}, distanceTolerance, angleToleranceInDegrees) {
+		}) {
 
 			@Override
 			public ChassisSpeeds chassisSpeeds() {

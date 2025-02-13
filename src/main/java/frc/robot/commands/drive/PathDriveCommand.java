@@ -1,17 +1,10 @@
 package frc.robot.commands.drive;
 
-import static frc.robot.Constants.DriveConstants.*;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
@@ -22,53 +15,13 @@ import frc.robot.subsystems.DriveSubsystem;
  * @author Jeong-Hyon Hwang (jhhbrown@gmail.com)
  * @author Andrew Hwang (u.andrew.h@gmail.com)
  */
-public class PathDriveCommand extends Command {
-
-	/**
-	 * The {@code DriveSubsystem} used by this {@code PathDriveCommand}.
-	 */
-	protected DriveSubsystem m_driveSubsystem;
-
-	/**
-	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
-	 * dimensions in meters (input: error in meters, output: velocity in meters per
-	 * second).
-	 */
-	protected ProfiledPIDController m_controllerXY;
-
-	/**
-	 * The {@code ProfiledPIDController} for controlling the robot in the yaw
-	 * dimension in radians (input: error in radians, output: velocity in radians
-	 * per second).
-	 */
-	protected ProfiledPIDController m_controllerYaw;
-
-	/**
-	 * The distance error in meters which is tolerable.
-	 */
-	protected double m_distanceTolerance;
-
-	/**
-	 * The angle error in radians which is tolerable.
-	 */
-	protected double m_angleTolerance;
-
-	/**
-	 * The {@code Supplier<Pose2d>}s that provide the {@code Pose2d}s to which the
-	 * robot should move.
-	 */
-	protected List<Supplier<Pose2d>> m_targetPoseSuppliers;
+public class PathDriveCommand extends DriveCommand {
 
 	/**
 	 * The index for indicating the current {@code Pose2d} to which the robot
 	 * should move.
 	 */
 	protected int m_targetPoseIndex = 0;
-
-	/**
-	 * The current target {@code Pose2d} to which the robot should move.
-	 */
-	protected Pose2d m_targetPose;
 
 	/**
 	 * The ratio to apply to the distance and angle tolerances for intermeidate
@@ -111,18 +64,8 @@ public class PathDriveCommand extends Command {
 			double distanceTolerance,
 			double angleToleranceInDegrees, double intermediateToleranceRatio,
 			List<Supplier<Pose2d>> targetPoseSuppliers) {
-		m_driveSubsystem = driveSubsystem;
-		m_targetPoseSuppliers = targetPoseSuppliers;
-		m_distanceTolerance = distanceTolerance;
-		m_angleTolerance = Math.toRadians(angleToleranceInDegrees);
+		super(driveSubsystem, distanceTolerance, angleToleranceInDegrees, targetPoseSuppliers);
 		m_intermediateToleranceRatio = intermediateToleranceRatio;
-		m_controllerXY = new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
-				new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration));
-		m_controllerYaw = new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
-				new TrapezoidProfile.Constraints(kTurnMaxAngularSpeed,
-						kTurnMaxAcceleration));
-		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
-		addRequirements(m_driveSubsystem);
 	}
 
 	/**
@@ -163,54 +106,6 @@ public class PathDriveCommand extends Command {
 	}
 
 	/**
-	 * Is invoked periodically by the scheduler until this
-	 * {@code PathDriveCommand} is either ended or interrupted.
-	 */
-	@Override
-	public void execute() {
-		m_driveSubsystem.drive(chassisSpeeds(), true);
-	}
-
-	/**
-	 * Calculates the {@code ChassisSpeeds} to move the robot toward the current
-	 * target.
-	 * 
-	 * @return the calculated {@code ChassisSpeeds} to move the robot toward the
-	 *         current target
-	 */
-	public ChassisSpeeds chassisSpeeds() {
-		var currentPose = m_driveSubsystem.getPose();
-		Translation2d current2target = m_targetPose.getTranslation()
-				.minus(currentPose.getTranslation());
-		double velocityX = 0, velocityY = 0;
-		try {
-			double distance = current2target.getNorm();
-			double speed = Math.abs(m_controllerXY.calculate(distance, 0));
-			speed = applyThreshold(speed, kDriveMinSpeed);
-			var angle = current2target.getAngle();
-			velocityX = speed * angle.getCos();
-			velocityY = speed * angle.getSin();
-		} catch (Exception e) {
-		}
-		double angularVelocityRadiansPerSecond = m_controllerYaw
-				.calculate(currentPose.getRotation().getRadians(), m_targetPose.getRotation().getRadians());
-		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
-		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
-	}
-
-	/**
-	 * Is invoked once this {@code PathDriveCommand} is either ended or
-	 * interrupted.
-	 * 
-	 * @param interrupted indicates if this {@code PathDriveCommand} was
-	 *        interrupted
-	 */
-	@Override
-	public void end(boolean interrupted) {
-		m_driveSubsystem.drive(0, 0, 0, true);
-	}
-
-	/**
 	 * Determines whether or not this {@code PathDriveCommand} needs to end.
 	 * 
 	 * @return {@code true} if this {@code PathDriveCommand} needs to end;
@@ -238,19 +133,6 @@ public class PathDriveCommand extends Command {
 		var diff = targetPose.minus(m_driveSubsystem.getPose());
 		return diff.getTranslation().getNorm() < m_controllerXY.getPositionTolerance()
 				&& Math.abs(diff.getRotation().getRadians()) < m_controllerYaw.getPositionTolerance();
-	}
-
-	/**
-	 * Applies the specified threshold to the specified value.
-	 * 
-	 * @param value the value to be thresholded
-	 * @param threshold the threshold limit
-	 * @return the original value if the absolute value of that value is greater or
-	 *         equal to the threshold; the threshold with the original value's sign
-	 *         otherwise
-	 */
-	public static double applyThreshold(double value, double threshold) {
-		return Math.abs(value) < threshold ? Math.signum(value) * threshold : value;
 	}
 
 }
