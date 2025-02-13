@@ -68,6 +68,20 @@ public class Robot extends TimedRobot {
 		double distanceTolerance = 0.01;
 		double angleToleranceInDegrees = 1.0;
 
+		m_testSelector
+				.addOption(
+						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
+						CommandComposer.moveForwardBackward2Controllers(6, distanceTolerance, angleToleranceInDegrees));
+		m_testSelector
+				.addOption(
+						"Check PID Constants for Driving (Unit Circle)",
+						CommandComposer.moveOnCircle(1, 16, 32, distanceTolerance, angleToleranceInDegrees, 32, 60));
+		m_testSelector
+				.addOption(
+						"Quickly Align to AprilTags 7 and 8",
+						CommandComposer.alignToTags(
+								distanceTolerance, angleToleranceInDegrees, 1, transform(0.8, 0, 180),
+								transform(1.3, 0, 180), 7, 8, 7, 8, 7));
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check DriveSubsystem (Robot-Oriented F/B/L/R/LR/RR)", m_driveSubsystem.testCommand());
@@ -77,17 +91,9 @@ public class Robot extends TimedRobot {
 						CommandComposer.testDriveSubsystemFieldRelative());
 		m_testSelector
 				.addOption(
-						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
-						CommandComposer.moveForwardBackward2Controllers(6, distanceTolerance, angleToleranceInDegrees));
-		m_testSelector
-				.addOption(
 						"Check PID Constants for Driving (5'x5' Square)",
 						CommandComposer
 								.moveOnSquare(Units.feetToMeters(5), distanceTolerance, angleToleranceInDegrees, 16));
-		m_testSelector
-				.addOption(
-						"Check PID Constants for Driving (Unit Circle)",
-						CommandComposer.moveOnCircle(1, 8, 16, distanceTolerance, angleToleranceInDegrees, 10, 60));
 		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
 		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
 

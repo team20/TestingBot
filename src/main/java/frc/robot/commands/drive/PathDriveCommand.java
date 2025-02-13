@@ -109,26 +109,6 @@ public class PathDriveCommand extends Command {
 	public PathDriveCommand(DriveSubsystem driveSubsystem,
 			double distanceTolerance,
 			double angleToleranceInDegrees, double intermediateToleranceRatio,
-			@SuppressWarnings("unchecked") Supplier<Pose2d>... targetPoseSuppliers) {
-		this(driveSubsystem, distanceTolerance, angleToleranceInDegrees, intermediateToleranceRatio,
-				Arrays.stream(targetPoseSuppliers).toList());
-	}
-
-	/**
-	 * Constructs a new {@code PathDriveCommand} whose purpose is to move
-	 * the robot to certain {@code Pose2d}s.
-	 * 
-	 * @param driveSubsystem the {@code DriveSubsystem} to use
-	 * @param distanceTolerance the distance error in meters which is tolerable
-	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
-	 * @param intermediateToleranceRatio the ratio to apply to the distance and
-	 *        angle tolerances for intermeidate target {@code Pose2d}s
-	 * @param targetPoseSuppliers {@code Supplier<Pose2d>}s that provide the
-	 *        {@code Pose2d}s to which the robot should move
-	 */
-	public PathDriveCommand(DriveSubsystem driveSubsystem,
-			double distanceTolerance,
-			double angleToleranceInDegrees, double intermediateToleranceRatio,
 			List<Supplier<Pose2d>> targetPoseSuppliers) {
 		m_driveSubsystem = driveSubsystem;
 		m_targetPoseSuppliers = targetPoseSuppliers;

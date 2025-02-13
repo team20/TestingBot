@@ -2,13 +2,17 @@ package frc.robot;
 
 import static edu.wpi.first.math.util.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
+import static frc.robot.Constants.*;
 import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.commands.drive.DriveCommand2Controllers;
@@ -185,6 +189,61 @@ public class CommandComposer {
 						0, 0, a.getRadians() * kTurnP,
 						false);
 		}).withTimeout(1);
+	}
+
+	/**
+	 * Returns a {@code Command} for aligning the robot to the specified
+	 * {@code AprilTag}.
+	 * 
+	 * @param tagID the ID of the {@code AprilTag}
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param intermediateToleranceRatio the ratio to apply to the distance and
+	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param robotToTag the {@code Pose2d}s of the {@code AprilTag} relative to the
+	 *        center of the robot when the alignment is completed
+	 * @param robotToTagReady the {@code Pose2d}s of the {@code AprilTag} relative
+	 *        to the center of the robot when the alignment ready step is completed
+	 * 
+	 * @return a {@code Command} for aligning the robot to the specified
+	 *         {@code AprilTag}
+	 */
+	public static Command alignToTag(int tagID, double distanceTolerance, double angleTolerance,
+			double intermediateToleranceRatio, Transform2d robotToTag, Transform2d robotToTagReady) {
+		return new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, intermediateToleranceRatio,
+				List.of(
+						() -> m_poseEstimationSubsystem
+								.odometryCentricPose(kFieldLayout.getTagPose(tagID).get().toPose2d())
+								.plus(robotToTagReady),
+						() -> m_poseEstimationSubsystem
+								.odometryCentricPose(kFieldLayout.getTagPose(tagID).get().toPose2d())
+								.plus(robotToTag)));
+	}
+
+	/**
+	 * Returns a {@code Command} for aligning the robot to the specified
+	 * {@code AprilTag}s.
+	 * 
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleTolerance the angle error in degrees which is tolerable
+	 * @param intermediateToleranceRatio the ratio to apply to the distance and
+	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param robotToTag the {@code Pose2d}s of the {@code AprilTag} relative to the
+	 *        center of the robot when the alignment is completed
+	 * @param robotToTagReady the {@code Pose2d}s of the {@code AprilTag} relative
+	 *        to the center of the robot when the alignment ready step is completed
+	 * @param tagID the ID of the {@code AprilTag}
+	 * 
+	 * @return a {@code Command} for aligning the robot to the specified
+	 *         {@code AprilTag}s
+	 */
+	public static Command alignToTags(double distanceTolerance, double angleTolerance,
+			double intermediateToleranceRatio, Transform2d robotToTag, Transform2d robotToTagReady, int... tagIDs) {
+		List<Command> l = Arrays.stream(tagIDs).mapToObj(
+				i -> alignToTag(
+						i, distanceTolerance, angleTolerance, intermediateToleranceRatio, robotToTag, robotToTagReady))
+				.toList();
+		return sequence(l.toArray(new Command[0]));
 	}
 
 }
