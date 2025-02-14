@@ -31,26 +31,6 @@ public class CommandComposer {
 	}
 
 	/**
-	 * Creates a {@code Command} for testing the {@code DriveSubsystem}. The robot
-	 * must move forward and then backward while rotating left and then right
-	 * relative to the field.
-	 * 
-	 * @return a {@code Command} for testing the {@code DriveSubsystem}. The robot
-	 *         must move forward and then backward while rotating left and then
-	 *         right relative to the field.
-	 */
-	public static Command testDriveSubsystemFieldRelative() {
-		double speed = 1;
-		double rotionalSpeed = Math.toRadians(45);
-		double duration = 2.0;
-		return sequence(
-				m_driveSubsystem.run(() -> m_driveSubsystem.setModuleAngles(0)).withTimeout(.1),
-				m_driveSubsystem.run(() -> m_driveSubsystem.drive(speed, 0, rotionalSpeed, true)).withTimeout(duration),
-				m_driveSubsystem.run(() -> m_driveSubsystem.drive(-speed, 0, -rotionalSpeed, true))
-						.withTimeout(duration));
-	}
-
-	/**
 	 * Returns a {@code Command} for testing all subsystems.
 	 * 
 	 * @return a {@code Command} for testing all subsystems

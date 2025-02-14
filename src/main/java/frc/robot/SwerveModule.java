@@ -53,42 +53,52 @@ public class SwerveModule {
 	}
 
 	/**
-	 * Returns drive encoder distance in meters traveled.
+	 * Returns the drive encoder distance in meters.
 	 * 
-	 * @return The position in meters.
+	 * @return the drive encoder position in meters
 	 */
 	public double getDriveEncoderPosition() {
 		return m_driveMotor.getEncoder().getPosition() * kMetersPerMotorRotation;
 	}
 
+	/**
+	 * Returns the steer current of this {@code SwerveModule}.
+	 * 
+	 * @return the steer current of this {@code SwerveModule}
+	 */
 	public double getSteerCurrent() {
 		return m_steerMotor.getOutputCurrent();
 	}
 
+	/**
+	 * Returns the drive current of this {@code SwerveModule}.
+	 * 
+	 * @return the drive current of this {@code SwerveModule}
+	 */
 	public double getDriveCurrent() {
 		return m_driveMotor.getOutputCurrent();
 	}
 
 	/**
-	 * Resets drive encoder to zero.
+	 * Resets the drive encoder to zero.
 	 */
 	public void resetDriveEncoder() {
 		m_driveMotor.getEncoder().setPosition(0);
 	}
 
 	/**
-	 * Gets the current drive motor voltage.
+	 * Returns the current drive motor voltage.
 	 * 
-	 * @return The motor speed in voltage
+	 * @return the motor speed in voltage
 	 */
 	public double getDriveVoltage() {
 		return m_driveMotor.getAppliedOutput() * kDriveMaxVoltage;
 	}
 
 	/**
-	 * Gets the current drive motor temperature.
+	 * Returns the current drive motor temperature.
 	 * 
-	 * @return The temperature in degrees Celsius
+	 * @return the temperature in degrees Celsius
 	 */
 	public double getDriveTemperature() {
 		return m_driveMotor.getMotorTemperature();
@@ -97,46 +107,46 @@ public class SwerveModule {
 	/**
 	 * Returns the module angle in degrees.
 	 * 
-	 * @return The module angle
+	 * @return the module angle in degrees
 	 */
 	public double getModuleAngle() {
 		return m_CANCoder.getAbsolutePosition().getValueAsDouble() * 360;
 	}
 
 	/**
-	 * Returns the module position.
+	 * Returns the current {@code SwerveModulePosition} of this
+	 * {@code SwerveModule}.
 	 * 
-	 * @return The module position
+	 * @return the current {@code SwerveModulePosition} of this {@code SwerveModule}
 	 */
 	public SwerveModulePosition getModulePosition() {
 		return new SwerveModulePosition(getDriveEncoderPosition(), Rotation2d.fromDegrees(getModuleAngle()));
 	}
 
 	/**
-	 * Gets the module speed and angle.
+	 * Returns the current {@code SwerveModuleState} of this {@code SwerveModule}.
 	 * 
-	 * @return The module state
+	 * @return the current {@code SwerveModuleState} of this {@code SwerveModule}
 	 */
 	public SwerveModuleState getModuleState() {
 		return new SwerveModuleState(getDriveVoltage(), Rotation2d.fromDegrees(getModuleAngle()));
 	}
 
 	/**
-	 * Sets the drive motor speeds and module angle.
+	 * Sets the drive motor speeds and module angle of this {@code SwerveModule}.
 	 * 
-	 * @param state The module state. Note that the speedMetersPerSecond field has
-	 *        been repurposed to contain volts, not velocity.
+	 * @param state a {@code SwerveModuleState} containing the target speeds and
+	 *        angle
 	 */
 	public void setModuleState(SwerveModuleState state) {
 		m_driveMotor.setVoltage(state.speedMetersPerSecond);
-		double turnPower = m_steerController.calculate(getModuleAngle(), state.angle.getDegrees());
-		m_steerMotor.setVoltage(turnPower);
+		setAngle(state.angle.getDegrees());
 	}
 
 	/**
-	 * Sets the module angle.
+	 * Sets the module angle of this {@code SwerveModule}.
 	 * 
-	 * @param angle the target angle
+	 * @param angle the target angle in degrees
 	 */
 	public void setAngle(double angle) {
 		m_steerMotor.setVoltage(m_steerController.calculate(getModuleAngle(), angle));

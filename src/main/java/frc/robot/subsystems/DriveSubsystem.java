@@ -340,8 +340,8 @@ public class DriveSubsystem extends SubsystemBase {
 
 	/**
 	 * Creates a {@code Command} for testing this {@code DriveSubsystem}. The robot
-	 * must move forward, backward, strafe left, strafe right, and turn left and
-	 * right.
+	 * must move forward, backward, strafe left, strafe right, turn left, turn
+	 * right, and moving forward and backward while turning.
 	 * 
 	 * @return a {@code Command} for testing this {@code DriveSubsystem}
 	 */
@@ -356,6 +356,8 @@ public class DriveSubsystem extends SubsystemBase {
 				run(() -> drive(0, speed, 0, false)).withTimeout(duration),
 				run(() -> drive(0, -speed, 0, false)).withTimeout(duration),
 				run(() -> drive(0, 0, rotionalSpeed, false)).withTimeout(duration),
-				run(() -> drive(0, 0, -rotionalSpeed, false)).withTimeout(duration));
+				run(() -> drive(0, 0, -rotionalSpeed, false)).withTimeout(duration),
+				run(() -> drive(speed, 0, rotionalSpeed, true)).withTimeout(duration),
+				run(() -> drive(-speed, 0, -rotionalSpeed, true)).withTimeout(duration));
 	}
 }

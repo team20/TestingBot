@@ -36,30 +36,33 @@ public class SwerveModuleSimulator extends SwerveModule {
 	}
 
 	/**
-	 * Sets the drive motor speeds and module angle.
+	 * Sets the drive motor speeds and module angle of this
+	 * {@code SwerveModuleSimulator}.
 	 * 
-	 * @param state The module state. Note that the speedMetersPerSecond field has
-	 *        been repurposed to contain volts, not velocity.
+	 * @param state a {@code SwerveModuleState} containing the target speeds and
+	 *        angle
 	 */
+	@Override
 	public void setModuleState(SwerveModuleState state) {
 		super.setModuleState(state);
-		updateSim();
+		update();
 	}
 
 	/**
-	 * Sets the module angle.
+	 * Sets the module angle of this {@code SwerveModuleSimulator}.
 	 * 
-	 * @param angle the target angle
+	 * @param angle the target angle in degrees
 	 */
+	@Override
 	public void setAngle(double angle) {
 		super.setAngle(angle);
-		updateSim();
+		update();
 	}
 
 	/**
-	 * Updates this {@code SwerveModule} for simulations.
+	 * Updates this {@code SwerveModuleSimulator}.
 	 */
-	private void updateSim() {
+	private void update() {
 		m_driveMotorModel.setInputVoltage(m_driveMotorSim.getAppliedOutput() * kDriveMaxVoltage);
 		m_driveMotorModel.update(TimedRobot.kDefaultPeriod);
 		m_driveMotorSim

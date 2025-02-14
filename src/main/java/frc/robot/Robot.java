@@ -85,11 +85,9 @@ public class Robot extends TimedRobot {
 								transform(1.3, 0, 180), 7, 8, 7, 8, 7));
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
-		m_testSelector.addOption("Check DriveSubsystem (Robot-Oriented F/B/L/R/LR/RR)", m_driveSubsystem.testCommand());
 		m_testSelector
 				.addOption(
-						"Check DriveSubsystem (Field-Relative F/B with LR/RR)",
-						CommandComposer.testDriveSubsystemFieldRelative());
+						"Check DriveSubsystem (F/B/L/R/LR/RR and F/B while rotating)", m_driveSubsystem.testCommand());
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (5'x5' Square)",
