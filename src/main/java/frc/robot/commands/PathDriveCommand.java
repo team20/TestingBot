@@ -70,6 +70,7 @@ public class PathDriveCommand extends DriveCommand {
 	 */
 	@Override
 	public void initialize() {
+		targetPoseSupplier().reset();
 		moveToNextTargetPose();
 		Pose2d pose = m_driveSubsystem.getPose();
 		m_controllerXY.reset(m_targetPose.minus(pose).getTranslation().getNorm());
@@ -167,6 +168,13 @@ public class PathDriveCommand extends DriveCommand {
 		 */
 		public IterativeTargetPoseSupplier(List<Supplier<Pose2d>> targetPoseSuppliers) {
 			m_targetPoseSuppliers = targetPoseSuppliers;
+		}
+
+		/**
+		 * Resets this {@code IterativeTargetPoseSupplier}.
+		 */
+		public void reset() {
+			m_targetPoseIndex = 0;
 		}
 
 		/**

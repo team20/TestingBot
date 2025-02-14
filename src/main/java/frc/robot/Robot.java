@@ -74,8 +74,8 @@ public class Robot extends TimedRobot {
 						CommandComposer.moveForwardBackward2Controllers(6, distanceTolerance, angleToleranceInDegrees));
 		m_testSelector
 				.addOption(
-						"Check PID Constants for Driving (Ellipe with Max Radius of 1m)",
-						CommandComposer.moveOnEllipse(
+						"Check PID Constants for Driving (Oval with Max Radius of 1m)",
+						CommandComposer.moveOnOval(
 								1, 8, 16, distanceTolerance, angleToleranceInDegrees, 16, 360 / 12 * 3 / 2));
 		m_testSelector
 				.addOption(
