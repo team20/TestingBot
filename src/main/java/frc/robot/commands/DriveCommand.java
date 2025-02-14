@@ -2,7 +2,6 @@ package frc.robot.commands;
 
 import static frc.robot.Constants.DriveConstants.*;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -58,10 +57,10 @@ public class DriveCommand extends Command {
 	protected Pose2d m_targetPose;
 
 	/**
-	 * The {@code Supplier<Pose2d>}s that provide the {@code Pose2d}s to which the
+	 * The {@code Supplier<Pose2d>} that provides the {@code Pose2d} to which the
 	 * robot should move.
 	 */
-	protected List<Supplier<Pose2d>> m_targetPoseSuppliers;
+	protected Supplier<Pose2d> m_targetPoseSupplier;
 
 	/**
 	 * Constructs a new {@code DriveCommand} whose purpose is to move
@@ -91,21 +90,6 @@ public class DriveCommand extends Command {
 	 */
 	public DriveCommand(DriveSubsystem driveSubsystem, double distanceTolerance, double angleToleranceInDegrees,
 			Supplier<Pose2d> targetPoseSupplier) {
-		this(driveSubsystem, distanceTolerance, angleToleranceInDegrees, List.of(targetPoseSupplier));
-	}
-
-	/**
-	 * Constructs a new {@code DriveCommand} whose purpose is to move
-	 * the robot to a certain {@code Pose2d}.
-	 * 
-	 * @param driveSubsystem the {@code DriveSubsystem} to use
-	 * @param distanceTolerance the distance error in meters which is tolerable
-	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
-	 * @param targetPoseSuppliers {@code Supplier<Pose2d>}s that provide the
-	 *        {@code Pose2d}s to which the robot should move.
-	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, double distanceTolerance, double angleToleranceInDegrees,
-			List<Supplier<Pose2d>> targetPoseSuppliers) {
 		m_driveSubsystem = driveSubsystem;
 		m_distanceTolerance = distanceTolerance;
 		m_angleTolerance = Math.toRadians(angleToleranceInDegrees);
@@ -115,7 +99,7 @@ public class DriveCommand extends Command {
 				new TrapezoidProfile.Constraints(kTurnMaxAngularSpeed,
 						kTurnMaxAcceleration));
 		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
-		m_targetPoseSuppliers = targetPoseSuppliers;
+		m_targetPoseSupplier = targetPoseSupplier;
 		addRequirements(m_driveSubsystem);
 	}
 
@@ -129,7 +113,7 @@ public class DriveCommand extends Command {
 		Pose2d pose = m_driveSubsystem.getPose();
 		m_targetPose = pose;
 		try {
-			m_targetPose = m_targetPoseSuppliers.get(0).get();
+			m_targetPose = m_targetPoseSupplier.get();
 		} catch (Exception e) {
 			e.printStackTrace();
 			m_targetPose = pose;

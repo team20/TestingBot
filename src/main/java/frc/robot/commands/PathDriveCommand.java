@@ -18,12 +18,6 @@ import frc.robot.subsystems.DriveSubsystem;
 public class PathDriveCommand extends DriveCommand {
 
 	/**
-	 * The index for indicating the current {@code Pose2d} to which the robot
-	 * should move.
-	 */
-	protected int m_targetPoseIndex = 0;
-
-	/**
 	 * The ratio to apply to the distance and angle tolerances for intermeidate
 	 * target {@code Pose2d}s
 	 */
@@ -64,7 +58,8 @@ public class PathDriveCommand extends DriveCommand {
 			double distanceTolerance,
 			double angleToleranceInDegrees, double intermediateToleranceRatio,
 			List<Supplier<Pose2d>> targetPoseSuppliers) {
-		super(driveSubsystem, distanceTolerance, angleToleranceInDegrees, targetPoseSuppliers);
+		super(driveSubsystem, distanceTolerance, angleToleranceInDegrees,
+				new IterativeTargetPoseSupplier(targetPoseSuppliers));
 		m_intermediateToleranceRatio = intermediateToleranceRatio;
 	}
 
@@ -75,28 +70,25 @@ public class PathDriveCommand extends DriveCommand {
 	 */
 	@Override
 	public void initialize() {
-		setTargetPose(0);
+		moveToNextTargetPose();
 		Pose2d pose = m_driveSubsystem.getPose();
 		m_controllerXY.reset(m_targetPose.minus(pose).getTranslation().getNorm());
 		m_controllerYaw.reset(pose.getRotation().getRadians());
 	}
 
 	/**
-	 * Sets the current target {@code Pose2d}
-	 * 
-	 * @param targetPoseIndex the index of the target {@code Pose2d}
+	 * Moves to the next target {@code Pose2d}.
 	 */
-	void setTargetPose(int targetPoseIndex) {
-		m_targetPoseIndex = targetPoseIndex;
+	protected void moveToNextTargetPose() {
 		Pose2d pose = m_driveSubsystem.getPose();
 		m_targetPose = pose;
 		try {
-			m_targetPose = m_targetPoseSuppliers.get(m_targetPoseIndex).get();
+			m_targetPose = m_targetPoseSupplier.get();
 		} catch (Exception e) {
 			e.printStackTrace();
 			m_targetPose = pose;
 		}
-		if (m_targetPoseIndex < m_targetPoseSuppliers.size() - 1) {
+		if (targetPoseSupplier().hasNext()) {
 			m_controllerXY.setTolerance(m_intermediateToleranceRatio * m_distanceTolerance);
 			m_controllerYaw.setTolerance(m_intermediateToleranceRatio * m_angleTolerance);
 		} else {
@@ -114,9 +106,10 @@ public class PathDriveCommand extends DriveCommand {
 	@Override
 	public boolean isFinished() {
 		if (alignedTo(m_targetPose)) {
-			if (m_targetPoseIndex == m_targetPoseSuppliers.size() - 1)
+			if (targetPoseSupplier().hasNext())
+				moveToNextTargetPose();
+			else
 				return true;
-			setTargetPose(m_targetPoseIndex + 1);
 		}
 		return false;
 	}
@@ -135,4 +128,66 @@ public class PathDriveCommand extends DriveCommand {
 				&& Math.abs(diff.getRotation().getRadians()) < m_controllerYaw.getPositionTolerance();
 	}
 
+	/**
+	 * Returns the {@code IterativeTargetPoseSupplier} used by this
+	 * {@code PathDriveCommand}.
+	 * 
+	 * @return the {@code IterativeTargetPoseSupplier} used by this
+	 *         {@code PathDriveCommand}
+	 */
+	protected IterativeTargetPoseSupplier targetPoseSupplier() {
+		return (IterativeTargetPoseSupplier) m_targetPoseSupplier;
+	}
+
+	/**
+	 * An {@code IterativeTargetPoseSupplier} is a {@code Supplier<Pose2d>} that
+	 * iterates over a number of {@code Supplier<Pose2d>}.
+	 * The {@link get()} method of an {@code IterativeTargetPoseSupplier} returns
+	 * the {@code Pose2d} from the current {@code Supplier<Pose2d>} in iteration.
+	 */
+	static class IterativeTargetPoseSupplier implements Supplier<Pose2d> {
+
+		/**
+		 * The {@code Supplier<Pose2d>}s that provide the {@code Pose2d}s to which the
+		 * robot should move.
+		 */
+		List<Supplier<Pose2d>> m_targetPoseSuppliers;
+
+		/**
+		 * The index indicating the current {@code Pose2d} to which the robot
+		 * should move.
+		 */
+		protected int m_targetPoseIndex = 0;
+
+		/**
+		 * Constructs an {@code IterativeTargetPoseSupplier}.
+		 * 
+		 * @param targetPoseSuppliers {@code Supplier<Pose2d>}s that provide the
+		 *        {@code Pose2d}s to which the robot should move
+		 */
+		public IterativeTargetPoseSupplier(List<Supplier<Pose2d>> targetPoseSuppliers) {
+			m_targetPoseSuppliers = targetPoseSuppliers;
+		}
+
+		/**
+		 * Returns the curent target {@code Pose2d}.
+		 * 
+		 * @return the curent target {@code Pose2d}
+		 */
+		@Override
+		public Pose2d get() {
+			return m_targetPoseSuppliers.get(m_targetPoseIndex++).get();
+		}
+
+		/**
+		 * Determines whether or not there are more {@code Supplier<Pose2d>}s to iterate
+		 * over.
+		 * 
+		 * @return {@code true} if there are more {@code Supplier<Pose2d>}s to iterate
+		 *         over; {@code false} otherwise
+		 */
+		public boolean hasNext() {
+			return m_targetPoseIndex < m_targetPoseSuppliers.size();
+		}
+	}
 }

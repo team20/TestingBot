@@ -161,7 +161,7 @@ public class CommandComposer {
 		var l = new LinkedList<Pose2d>();
 		for (double i = 0; i < poseCount; i++) {
 			var t = translation(radius, 0).rotateBy(angle);
-			l.add(new Pose2d(translation(t.getX(), t.getY() / 2), angle));
+			l.add(new Pose2d(translation(t.getX() + radius, t.getY() / 2), angle));
 			double progress = i / poseCount;
 			double angularVelocity = progress * finalAngularIncrement + (1 - progress) * initialAngularIncrement;
 			angle = angle.plus(rotation(angularVelocity));
