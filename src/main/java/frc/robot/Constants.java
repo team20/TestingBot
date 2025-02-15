@@ -54,9 +54,9 @@ public class Constants {
 
 		// Make sure these are tuned (can do with SysId)
 		// public static final double kP = 0.09;
-		public static final double kP = 0.03; // TODO: find a good value
+		public static final double kP = 0.03;
 		public static final double kI = 0.0;
-		public static final double kD = 0.1 * kP; // TODO: find a good value
+		public static final double kD = 0.1 * kP;
 		// public static final double kD = 0;
 		public static final double kS = 0;
 		// public static final double kV = 0.11;
@@ -72,10 +72,8 @@ public class Constants {
 		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
 		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
 
-		// public static final double kDriveMaxSpeed = 5.0; // 5 meters per second //
-		// TODO: find a good value
-		public static final double kDriveMaxSpeed = 3.0; // 3 meters per second
-		public static final double kDriveMinSpeed = 0.0; // 0 meters per second
+		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
+		public static final double kDriveMinSpeed = 0.4; // 0.4 meters per second
 		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
 		public static final double kTurnMinAngularSpeed = Math.toRadians(0); // 0 degrees per second
 		public static final double kDriveMaxVoltage = 12;
@@ -95,27 +93,24 @@ public class Constants {
 
 		public static final int kEncoderDepth = 4;
 		public static final int kEncoderMeasurementPeriod = 16;
-		public static final int kDriveSmartCurrentLimit = 20; // TODO: find a good value
+		public static final int kDriveSmartCurrentLimit = 20;
 		public static final int kDrivePeakCurrentLimit = kDriveSmartCurrentLimit + 15;
-		public static final int kSteerSmartCurrentLimit = 20; // TODO: find a good value
+		public static final int kSteerSmartCurrentLimit = 20;
 		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;
 
 		// DriveCommand.java Constants
-		public static final double kDriveP = 5; // TODO: find a good value
+		public static final double kDriveP = 5;
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		public static final double kDriveMaxAcceleration = 1 * kDriveMaxSpeed; // kDriveMaxSpeed in 1 sec
-		// public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; //
-		// kDriveMaxSpeed in 1/2 sec
+		public static final double kDriveMaxAcceleration = 0.75 * kDriveMaxSpeed; // kDriveMaxSpeed in 1.5 sec
 
-		public static final double kTurnP = 5; // TODO: find a good value
+		public static final double kTurnP = 5;
 		public static final double kTurnI = 0;
 		public static final double kTurnD = 0;
-		public static final double kTurnMaxAcceleration = 1 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1 sec
-		// public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed;
-		// // kTurnMaxAngularSpeed in 1/2 sec
+		public static final double kTurnMaxAcceleration = 0.75 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1.5
+																						// sec
 
 	}
 

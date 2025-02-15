@@ -18,10 +18,16 @@ import frc.robot.subsystems.DriveSubsystem;
 public class PathDriveCommand extends DriveCommand {
 
 	/**
-	 * The ratio to apply to the distance and angle tolerances for intermeidate
-	 * target {@code Pose2d}s
+	 * The distance error in meters which is tolerable for intermeidate
+	 * target {@code Pose2d}s.
 	 */
-	protected double m_intermediateToleranceRatio;
+	protected double m_intermediateDistanceTolerance;
+
+	/**
+	 * The angle error in radians which is tolerable for intermeidate
+	 * target {@code Pose2d}s.
+	 */
+	protected double m_intermediateAngleTolerance;
 
 	/**
 	 * Constructs a new {@code PathDriveCommand} whose purpose is to move
@@ -30,15 +36,16 @@ public class PathDriveCommand extends DriveCommand {
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
-	 * @param intermediateToleranceRatio the ratio to apply to the distance and
-	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param intermediateDistanceTolerance the distance error in meters which is
+	 *        tolerable for intermeidate target {@code Pose2d}s
+	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
+	 *        is tolerable for intermeidate target {@code Pose2d}s
 	 * @param targetPoses {@code Pose2d}s to which the robot should move
 	 */
-	public PathDriveCommand(DriveSubsystem driveSubsystem,
-			double distanceTolerance,
-			double angleToleranceInDegrees, double intermediateToleranceRatio,
-			Pose2d... targetPoses) {
-		this(driveSubsystem, distanceTolerance, angleToleranceInDegrees, intermediateToleranceRatio,
+	public PathDriveCommand(DriveSubsystem driveSubsystem, double distanceTolerance, double angleToleranceInDegrees,
+			double intermediateDistanceTolerance, double intermediateAngleToleranceInDegrees, Pose2d... targetPoses) {
+		this(driveSubsystem, distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
+				intermediateAngleToleranceInDegrees,
 				Arrays.stream(targetPoses).map(p -> (Supplier<Pose2d>) (() -> p)).toList());
 	}
 
@@ -49,18 +56,20 @@ public class PathDriveCommand extends DriveCommand {
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
-	 * @param intermediateToleranceRatio the ratio to apply to the distance and
-	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param intermediateDistanceTolerance the distance error in meters which is
+	 *        tolerable for intermeidate target {@code Pose2d}s
+	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
+	 *        is tolerable for intermeidate target {@code Pose2d}s
 	 * @param targetPoseSuppliers {@code Supplier<Pose2d>}s that provide the
 	 *        {@code Pose2d}s to which the robot should move
 	 */
-	public PathDriveCommand(DriveSubsystem driveSubsystem,
-			double distanceTolerance,
-			double angleToleranceInDegrees, double intermediateToleranceRatio,
+	public PathDriveCommand(DriveSubsystem driveSubsystem, double distanceTolerance, double angleToleranceInDegrees,
+			double intermediateDistanceTolerance, double intermediateAngleToleranceInDegrees,
 			List<Supplier<Pose2d>> targetPoseSuppliers) {
 		super(driveSubsystem, distanceTolerance, angleToleranceInDegrees,
 				new IterativeTargetPoseSupplier(targetPoseSuppliers));
-		m_intermediateToleranceRatio = intermediateToleranceRatio;
+		m_intermediateDistanceTolerance = intermediateDistanceTolerance;
+		m_intermediateAngleTolerance = Math.toRadians(intermediateAngleToleranceInDegrees);
 	}
 
 	/**
@@ -90,8 +99,8 @@ public class PathDriveCommand extends DriveCommand {
 			m_targetPose = pose;
 		}
 		if (targetPoseSupplier().hasNext()) {
-			m_controllerXY.setTolerance(m_intermediateToleranceRatio * m_distanceTolerance);
-			m_controllerYaw.setTolerance(m_intermediateToleranceRatio * m_angleTolerance);
+			m_controllerXY.setTolerance(m_intermediateDistanceTolerance);
+			m_controllerYaw.setTolerance(m_intermediateAngleTolerance);
 		} else {
 			m_controllerXY.setTolerance(m_distanceTolerance);
 			m_controllerYaw.setTolerance(m_angleTolerance);

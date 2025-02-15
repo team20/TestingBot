@@ -2,7 +2,7 @@ package frc.robot.subsystems;
 
 import static frc.robot.Constants.*;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -37,7 +37,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * The {@code PhotonCamera}s and {@code PhotonPoseEstimator}s used by this
 	 * {@code PoseEstimationSubsystem}.
 	 */
-	private final Map<PhotonCamera, PhotonPoseEstimator> m_cameras = new HashMap<PhotonCamera, PhotonPoseEstimator>();
+	private final Map<PhotonCamera, PhotonPoseEstimator> m_cameras = new LinkedHashMap<PhotonCamera, PhotonPoseEstimator>();
 
 	/**
 	 * The {@code PhotonCamera} used by this {@code PoseEstimationSubsystem}.

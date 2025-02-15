@@ -9,6 +9,7 @@ import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -129,14 +130,17 @@ public class CommandComposer {
 	 *        describes how quickly the robot to move on the circle
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param intermediateToleranceRatio the ratio to apply to the distance and
-	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param intermediateDistanceTolerance the distance error in meters which is
+	 *        tolerable for intermeidate target {@code Pose2d}s
+	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
+	 *        is tolerable for intermeidate target {@code Pose2d}s
 	 * @param poseCount the number of {@code Pose2d}s on the circle
 	 * 
 	 * @return a {@code Command} for moving the robot on a circle
 	 */
 	public static Command moveOnOval(double radius, double initialAngularIncrement, double finalAngularIncrement,
-			double distanceTolerance, double angleTolerance, double intermediateToleranceRatio, int poseCount) {
+			double distanceTolerance, double angleTolerance, double intermediateDistanceTolerance,
+			double intermediateAngleToleranceInDegrees, int poseCount) {
 		Rotation2d angle = Rotation2d.kZero;
 		var l = new LinkedList<Pose2d>();
 		for (double i = 0; i < poseCount; i++) {
@@ -146,8 +150,8 @@ public class CommandComposer {
 			double angularVelocity = progress * finalAngularIncrement + (1 - progress) * initialAngularIncrement;
 			angle = angle.plus(rotation(angularVelocity));
 		}
-		return new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, intermediateToleranceRatio,
-				l.toArray(new Pose2d[0]));
+		return new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, intermediateDistanceTolerance,
+				intermediateAngleToleranceInDegrees, l.toArray(new Pose2d[0]));
 	}
 
 	/**
@@ -175,26 +179,27 @@ public class CommandComposer {
 	 * @param tagID the ID of the {@code AprilTag}
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param intermediateToleranceRatio the ratio to apply to the distance and
-	 *        angle tolerances for intermeidate target {@code Pose2d}s
-	 * @param robotToTag the {@code Pose2d}s of the {@code AprilTag} relative to the
-	 *        center of the robot when the alignment is completed
-	 * @param robotToTagReady the {@code Pose2d}s of the {@code AprilTag} relative
-	 *        to the center of the robot when the alignment ready step is completed
+	 * @param intermediateDistanceTolerance the distance error in meters which is
+	 *        tolerable for intermeidate target {@code Pose2d}s
+	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
+	 *        is tolerable for intermeidate target {@code Pose2d}s
+	 * @param robotToTagTransforms the {@code Pose2d}s of the {@code AprilTag}s
+	 *        relative to the center of the robot to complete alignment
 	 * 
 	 * @return a {@code Command} for aligning the robot to the specified
 	 *         {@code AprilTag}
 	 */
 	public static Command alignToTag(int tagID, double distanceTolerance, double angleTolerance,
-			double intermediateToleranceRatio, Transform2d robotToTag, Transform2d robotToTagReady) {
-		return new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance, intermediateToleranceRatio,
-				List.of(
-						() -> m_poseEstimationSubsystem
-								.odometryCentricPose(kFieldLayout.getTagPose(tagID).get().toPose2d())
-								.plus(robotToTagReady),
-						() -> m_poseEstimationSubsystem
-								.odometryCentricPose(kFieldLayout.getTagPose(tagID).get().toPose2d())
-								.plus(robotToTag)));
+			double intermediateDistanceTolerance, double intermediateAngleToleranceInDegrees,
+			List<Transform2d> robotToTagTransforms) {
+		return new PathDriveCommand(
+				m_driveSubsystem, distanceTolerance, angleTolerance, intermediateDistanceTolerance,
+				intermediateAngleToleranceInDegrees, robotToTagTransforms
+						.stream().map(
+								r -> (Supplier<Pose2d>) (() -> m_poseEstimationSubsystem
+										.odometryCentricPose(kFieldLayout.getTagPose(tagID).get().toPose2d())
+										.plus(r)))
+						.toList());
 	}
 
 	/**
@@ -203,8 +208,10 @@ public class CommandComposer {
 	 * 
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param intermediateToleranceRatio the ratio to apply to the distance and
-	 *        angle tolerances for intermeidate target {@code Pose2d}s
+	 * @param intermediateDistanceTolerance the distance error in meters which is
+	 *        tolerable for intermeidate target {@code Pose2d}s
+	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
+	 *        is tolerable for intermeidate target {@code Pose2d}s
 	 * @param robotToTag the {@code Pose2d}s of the {@code AprilTag} relative to the
 	 *        center of the robot when the alignment is completed
 	 * @param robotToTagReady the {@code Pose2d}s of the {@code AprilTag} relative
@@ -215,10 +222,12 @@ public class CommandComposer {
 	 *         {@code AprilTag}s
 	 */
 	public static Command alignToTags(double distanceTolerance, double angleTolerance,
-			double intermediateToleranceRatio, Transform2d robotToTag, Transform2d robotToTagReady, int... tagIDs) {
+			double intermediateDistanceTolerance, double intermediateAngleToleranceInDegrees,
+			List<Transform2d> robotToTagTransforms, int... tagIDs) {
 		List<Command> l = Arrays.stream(tagIDs).mapToObj(
 				i -> alignToTag(
-						i, distanceTolerance, angleTolerance, intermediateToleranceRatio, robotToTag, robotToTagReady))
+						i, distanceTolerance, angleTolerance, intermediateDistanceTolerance,
+						intermediateAngleToleranceInDegrees, robotToTagTransforms))
 				.toList();
 		return sequence(l.toArray(new Command[0]));
 	}

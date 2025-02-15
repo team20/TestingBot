@@ -8,6 +8,7 @@ import static frc.robot.Constants.*;
 import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
 
@@ -65,8 +66,10 @@ public class Robot extends TimedRobot {
 		m_autoSelector.addOption("Test DriveSubsystem", m_driveSubsystem.testCommand());
 		SmartDashboard.putData("Auto Selector", m_autoSelector);
 
-		double distanceTolerance = 0.03;
-		double angleToleranceInDegrees = 2.0;
+		double distanceTolerance = 0.01;
+		double angleToleranceInDegrees = 1.0;
+		double intermediateDistanceTolerance = 0.16;
+		double intermediateAngleToleranceInDegrees = 16.0;
 
 		m_testSelector
 				.addOption(
@@ -76,13 +79,16 @@ public class Robot extends TimedRobot {
 				.addOption(
 						"Check PID Constants for Driving (Oval with Max Radius of 1m)",
 						CommandComposer.moveOnOval(
-								1, 8, 16, distanceTolerance, angleToleranceInDegrees, 16, 360 / 12 * 3 / 2));
+								1, 8, 16, distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
+								intermediateAngleToleranceInDegrees, 360 / 12 * 3 / 2));
 		m_testSelector
 				.addOption(
-						"Quickly Align to AprilTags 7 and 8",
+						"Quickly Align to AprilTags 1, 2, 6, 7, and 8",
 						CommandComposer.alignToTags(
-								distanceTolerance, angleToleranceInDegrees, 16, transform(0.8, 0, 180),
-								transform(1.3, 0, 180), 7, 8, 7, 8, 7));
+								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
+								intermediateAngleToleranceInDegrees,
+								List.of(transform(2.7, 0, 180), transform(1.4, 0, 180), transform(.8, 0, 180)), 7, 6, 1,
+								6, 7, 8, 2, 8, 7));
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
 		m_testSelector
