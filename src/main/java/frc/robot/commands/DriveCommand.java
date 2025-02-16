@@ -146,15 +146,18 @@ public class DriveCommand extends Command {
 		double velocityX = 0, velocityY = 0;
 		double distance = current2target.getNorm();
 		double speed = Math.abs(m_controllerXY.calculate(distance, 0));
-		if (speed > 1e-6) {
-			speed = applyThreshold(speed, kDriveMinSpeed);
+		if (speed > 1e-6) { // due to implementation of Translation2d#getAngle()
 			var angle = current2target.getAngle();
-			velocityX = speed * angle.getCos();
-			velocityY = speed * angle.getSin();
+			if (speed > kDriveMinSpeed) {
+				velocityX = speed * angle.getCos();
+				velocityY = speed * angle.getSin();
+			} else {
+				velocityX = kDriveMinSpeed * angle.getCos();
+				velocityY = kDriveMinSpeed * angle.getSin();
+			}
 		}
 		double angularVelocityRadiansPerSecond = m_controllerYaw
 				.calculate(currentPose.getRotation().getRadians(), m_targetPose.getRotation().getRadians());
-		angularVelocityRadiansPerSecond = applyThreshold(angularVelocityRadiansPerSecond, kTurnMinAngularSpeed);
 		return new ChassisSpeeds(velocityX, velocityY, angularVelocityRadiansPerSecond);
 	}
 
@@ -179,19 +182,6 @@ public class DriveCommand extends Command {
 	@Override
 	public boolean isFinished() {
 		return m_controllerXY.atGoal() && m_controllerYaw.atGoal();
-	}
-
-	/**
-	 * Applies the specified threshold to the specified value.
-	 * 
-	 * @param value the value to be thresholded
-	 * @param threshold the threshold limit
-	 * @return the original value if the absolute value of that value is greater or
-	 *         equal to the threshold; the threshold with the original value's sign
-	 *         otherwise
-	 */
-	public static double applyThreshold(double value, double threshold) {
-		return Math.abs(value) < threshold ? Math.signum(value) * threshold : value;
 	}
 
 }

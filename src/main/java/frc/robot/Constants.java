@@ -14,27 +14,6 @@ public class Constants {
 		public static final int kOperatorControllerPort = 1;
 		public static final double kDeadzone = 0.05;
 		public static final double kTriggerDeadzone = .05;
-
-		public static final class Button {
-			/** Left middle button */
-			public static final int kSquare = 1;
-			/** Bottom button */
-			public static final int kX = 2;
-			/** Right middle button */
-			public static final int kCircle = 3;
-			/** Top button */
-			public static final int kTriangle = 4;
-			public static final int kLeftBumper = 5;
-			public static final int kRightBumper = 6;
-			public static final int kLeftTrigger = 7;
-			public static final int kRightTrigger = 8;
-			public static final int kShare = 9;
-			public static final int kOptions = 10;
-			public static final int kLeftStick = 11;
-			public static final int kRightStick = 12;
-			public static final int kPS = 13;
-			public static final int kTrackpad = 14;
-		}
 	}
 
 	public static final class DriveConstants {
@@ -57,25 +36,16 @@ public class Constants {
 		public static final double kP = 0.03;
 		public static final double kI = 0.0;
 		public static final double kD = 0.1 * kP;
-		// public static final double kD = 0;
 		public static final double kS = 0;
-		// public static final double kV = 0.11;
-		// public static final double kA = 0.009;
-		public static final double kV = 0.11 * 1 / 2;
-		public static final double kA = 0.009 * 1 / 2;
-
-		// public static final double kA = 0.0001;
-
-		// public static final double kTeleopMaxVoltage = 12;
-		// public static final double kTeleopMaxTurnVoltage = 7.2;
+		public static final double kV = 0.11;
+		public static final double kA = 0.009;
 
 		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
 		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
 
 		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
 		public static final double kDriveMinSpeed = 0.4; // 0.4 meters per second
-		public static final double kTurnMaxAngularSpeed = Math.toRadians(180); // 1/2 rotation per second
-		public static final double kTurnMinAngularSpeed = Math.toRadians(0); // 0 degrees per second
+		public static final double kTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
 		public static final double kDriveMaxVoltage = 12;
 
 		public static final double kDriveGearRatio = 6.12;

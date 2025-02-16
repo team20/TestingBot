@@ -8,15 +8,16 @@ import static frc.robot.Constants.*;
 import static frc.robot.Constants.RobotConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import org.littletonrobotics.urcl.URCL;
 import org.photonvision.PhotonCamera;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -31,8 +32,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants.ControllerConstants;
-import frc.robot.Constants.ControllerConstants.Button;
 import frc.robot.commands.DriveCommand;
+import frc.robot.commands.PathDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
@@ -87,7 +88,8 @@ public class Robot extends TimedRobot {
 						CommandComposer.alignToTags(
 								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
 								intermediateAngleToleranceInDegrees,
-								List.of(transform(2.7, 0, 180), transform(1.4, 0, 180), transform(.8, 0, 180)), 7, 6, 1,
+								List.of(transform(1.5, 0, 180), transform(1.0, 0, 180), transform(.5, 0, 180)),
+								transform(1.5, 0, 180), 7, 6, 1,
 								6, 7, 8, 2, 8, 7));
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
@@ -123,14 +125,19 @@ public class Robot extends TimedRobot {
 						() -> -m_driverController.getLeftX(),
 						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
 						() -> !m_driverController.getHID().getSquareButton()));
-
-		m_driverController.button(Button.kSquare)
-				.whileTrue(
-						driveWithAlignmentCommand(
-								() -> -m_driverController.getLeftY(),
-								() -> -m_driverController.getLeftX(),
-								() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
-								new Transform2d(0.5, 0, Rotation2d.fromDegrees(180)), 2, 0.03, 3));
+		m_driverController.square().whileTrue(
+				driveWithAlignmentCommand(
+						() -> -m_driverController.getLeftY(),
+						() -> -m_driverController.getLeftX(),
+						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(), 2, 0.01, 1,
+						transform(0.5, 0, 180)));
+		m_driverController.cross().whileTrue(
+				driveWithAlignmentCommand(
+						() -> -m_driverController.getLeftY(),
+						() -> -m_driverController.getLeftX(),
+						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(), 2, 0.01, 1, 0.1, 5,
+						transform(1.0, 0, 180),
+						transform(0.5, 0, 180)));
 	}
 
 	/**
@@ -143,25 +150,67 @@ public class Robot extends TimedRobot {
 	 *        go to the left (+Y direction).
 	 * @param rotation rotation speed supplier. Positive values make the
 	 *        robot rotate CCW.
-	 * @param robotToTag the {@code Tranform2d} representing the pose of the
-	 *        closest {@code AprilTag} relative to the robot when the robot is
-	 *        aligned
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
 	 *        which {@code AprilTag}s are considered
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
+	 * @param robotToTag the {@code Tranform2d} representing the pose of the
+	 *        closest {@code AprilTag} relative to the robot when the robot is
+	 *        aligned
 	 * @return a {@code Command} to automatically align the robot to the closest tag
 	 *         while driving the robot with joystick input
 	 */
-	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier rotation, Transform2d robotToTag, double distanceThresholdInMeters, double distanceTolerance,
-			double angleToleranceInDegrees) {
+	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed, DoubleSupplier rotation,
+			double distanceThresholdInMeters, double distanceTolerance, double angleToleranceInDegrees,
+			Transform2d robotToTag) {
 		return new DriveCommand(m_driveSubsystem, distanceTolerance, angleToleranceInDegrees, () -> {
 			Pose2d closestTagPose = m_poseEstimationSubsystem.closestTagPose(180, distanceThresholdInMeters);
 			if (closestTagPose == null)
 				return m_driveSubsystem.getPose();
 			return m_poseEstimationSubsystem.odometryCentricPose(closestTagPose.plus(robotToTag));
 		}) {
+
+			@Override
+			public ChassisSpeeds chassisSpeeds() {
+				ChassisSpeeds speeds = DriveSubsystem.chassisSpeeds(forwardSpeed, strafeSpeed, rotation);
+				return speeds.plus(super.chassisSpeeds());
+			}
+
+		};
+	}
+
+	/**
+	 * Creates a {@code Command} to automatically align the robot to the closest
+	 * {@code AprilTag} while driving the robot with joystick input.
+	 *
+	 * @param forwardSpeed forward speed supplier. Positive values make the robot
+	 *        go forward (+X direction).
+	 * @param strafeSpeed strafe speed supplier. Positive values make the robot
+	 *        go to the left (+Y direction).
+	 * @param rotation rotation speed supplier. Positive values make the
+	 *        robot rotate CCW.
+	 * @param distanceThresholdInMeters the maximum distance (in meters) within
+	 *        which {@code AprilTag}s are considered
+	 * @param distanceTolerance the distance error in meters which is tolerable
+	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
+	 * @param robotToTags the {@code Tranform2d} representing the pose of the
+	 *        closest {@code AprilTag} relative to the robot when the robot is
+	 *        aligned
+	 * @return a {@code Command} to automatically align the robot to the closest tag
+	 *         while driving the robot with joystick input
+	 */
+	Command driveWithAlignmentCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed, DoubleSupplier rotation,
+			double distanceThresholdInMeters, double distanceTolerance, double angleToleranceInDegrees,
+			double intermedateDistanceTolerance, double intermediateAngleToleranceInDegrees,
+			Transform2d... robotToTags) {
+		var l = Arrays.stream(robotToTags).map(r -> (Supplier<Pose2d>) (() -> {
+			Pose2d closestTagPose = m_poseEstimationSubsystem.closestTagPose(180, distanceThresholdInMeters);
+			if (closestTagPose == null)
+				return m_driveSubsystem.getPose();
+			return m_poseEstimationSubsystem.odometryCentricPose(closestTagPose.plus(r));
+		})).toList();
+		return new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleToleranceInDegrees,
+				intermedateDistanceTolerance, intermediateAngleToleranceInDegrees, l) {
 
 			@Override
 			public ChassisSpeeds chassisSpeeds() {

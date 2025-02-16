@@ -6,7 +6,6 @@ import static frc.robot.Constants.*;
 import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -174,36 +173,6 @@ public class CommandComposer {
 
 	/**
 	 * Returns a {@code Command} for aligning the robot to the specified
-	 * {@code AprilTag}.
-	 * 
-	 * @param tagID the ID of the {@code AprilTag}
-	 * @param distanceTolerance the distance error in meters which is tolerable
-	 * @param angleTolerance the angle error in degrees which is tolerable
-	 * @param intermediateDistanceTolerance the distance error in meters which is
-	 *        tolerable for intermeidate target {@code Pose2d}s
-	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
-	 *        is tolerable for intermeidate target {@code Pose2d}s
-	 * @param robotToTagTransforms the {@code Pose2d}s of the {@code AprilTag}s
-	 *        relative to the center of the robot to complete alignment
-	 * 
-	 * @return a {@code Command} for aligning the robot to the specified
-	 *         {@code AprilTag}
-	 */
-	public static Command alignToTag(int tagID, double distanceTolerance, double angleTolerance,
-			double intermediateDistanceTolerance, double intermediateAngleToleranceInDegrees,
-			List<Transform2d> robotToTagTransforms) {
-		return new PathDriveCommand(
-				m_driveSubsystem, distanceTolerance, angleTolerance, intermediateDistanceTolerance,
-				intermediateAngleToleranceInDegrees, robotToTagTransforms
-						.stream().map(
-								r -> (Supplier<Pose2d>) (() -> m_poseEstimationSubsystem
-										.odometryCentricPose(kFieldLayout.getTagPose(tagID).get().toPose2d())
-										.plus(r)))
-						.toList());
-	}
-
-	/**
-	 * Returns a {@code Command} for aligning the robot to the specified
 	 * {@code AprilTag}s.
 	 * 
 	 * @param distanceTolerance the distance error in meters which is tolerable
@@ -212,24 +181,37 @@ public class CommandComposer {
 	 *        tolerable for intermeidate target {@code Pose2d}s
 	 * @param intermediateAngleToleranceInDegrees the angle error in degrees which
 	 *        is tolerable for intermeidate target {@code Pose2d}s
-	 * @param robotToTag the {@code Pose2d}s of the {@code AprilTag} relative to the
-	 *        center of the robot when the alignment is completed
-	 * @param robotToTagReady the {@code Pose2d}s of the {@code AprilTag} relative
-	 *        to the center of the robot when the alignment ready step is completed
-	 * @param tagID the ID of the {@code AprilTag}
+	 * @param robotToTagTransforms the {@code Pose2d}s of the {@code AprilTag}
+	 *        relative to the center of the robot when the robit is aligned to the
+	 *        ready and alignment poses
+	 * @param robotToTagBackup the {@code Pose2d} of the {@code AprilTag} relative
+	 *        to the center of the robot when the robit is aligned to the backup
+	 *        pose
+	 * @param tagIDs the IDs of the {@code AprilTag}s
 	 * 
 	 * @return a {@code Command} for aligning the robot to the specified
 	 *         {@code AprilTag}s
 	 */
 	public static Command alignToTags(double distanceTolerance, double angleTolerance,
 			double intermediateDistanceTolerance, double intermediateAngleToleranceInDegrees,
-			List<Transform2d> robotToTagTransforms, int... tagIDs) {
-		List<Command> l = Arrays.stream(tagIDs).mapToObj(
-				i -> alignToTag(
-						i, distanceTolerance, angleTolerance, intermediateDistanceTolerance,
-						intermediateAngleToleranceInDegrees, robotToTagTransforms))
-				.toList();
-		return sequence(l.toArray(new Command[0]));
+			List<Transform2d> robotToTagTransforms, Transform2d robotToTagBackup, int... tagIDs) {
+		Pose2d previous = null;
+		var commands = new LinkedList<Command>();
+		for (int tagID : tagIDs) {
+			var tagPose = kFieldLayout.getTagPose(tagID).get().toPose2d();
+			var l = new LinkedList<Pose2d>();
+			if (previous != null)
+				l.add(previous);
+			for (var r : robotToTagTransforms)
+				l.add(tagPose.plus(r));
+			previous = tagPose.plus(robotToTagBackup);
+			var command = new PathDriveCommand(m_driveSubsystem, distanceTolerance, angleTolerance,
+					intermediateDistanceTolerance, intermediateAngleToleranceInDegrees, l.stream()
+							.map(p -> (Supplier<Pose2d>) (() -> m_poseEstimationSubsystem.odometryCentricPose(p)))
+							.toList());
+			commands.add(command);
+		}
+		return sequence(commands.toArray(new Command[0]));
 	}
 
 }
