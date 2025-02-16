@@ -72,16 +72,8 @@ public class Robot extends TimedRobot {
 		double intermediateDistanceTolerance = 0.16;
 		double intermediateAngleToleranceInDegrees = 16.0;
 
-		m_testSelector
-				.addOption(
-						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
-						CommandComposer.moveForwardBackward2Controllers(6, distanceTolerance, angleToleranceInDegrees));
-		m_testSelector
-				.addOption(
-						"Check PID Constants for Driving (Oval with Max Radius of 1m)",
-						CommandComposer.moveOnOval(
-								1, 8, 16, distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
-								intermediateAngleToleranceInDegrees, 360 / 12 * 3 / 2));
+		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
+		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
 		m_testSelector
 				.addOption(
 						"Quickly Align to AprilTags 1, 2, 6, 7, and 8",
@@ -91,18 +83,18 @@ public class Robot extends TimedRobot {
 								List.of(transform(1.5, 0, 180), transform(1.0, 0, 180), transform(.5, 0, 180)),
 								transform(1.5, 0, 180), 7, 6, 1,
 								6, 7, 8, 2, 8, 7));
-		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
-		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
 		m_testSelector
 				.addOption(
-						"Check DriveSubsystem (F/B/L/R/LR/RR and F/B while rotating)", m_driveSubsystem.testCommand());
+						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
+						CommandComposer.moveForwardBackward(6, distanceTolerance, angleToleranceInDegrees));
 		m_testSelector
 				.addOption(
 						"Check PID Constants for Driving (5'x5' Square)",
 						CommandComposer
 								.moveOnSquare(Units.feetToMeters(5), distanceTolerance, angleToleranceInDegrees, 16));
-		m_testSelector.addOption("Test Rotation", CommandComposer.testRotation());
-		m_testSelector.addOption("Turn toward Tag 1", CommandComposer.turnTowardTag(1));
+		m_testSelector
+				.addOption(
+						"Check DriveSubsystem (F/B/L/R/LR/RR and F/B while rotating)", m_driveSubsystem.testCommand());
 
 		SmartDashboard.putData("Test Selector", m_testSelector);
 
