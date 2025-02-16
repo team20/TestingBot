@@ -151,7 +151,7 @@ public class PathDriveCommand extends DriveCommand {
 
 	/**
 	 * An {@code IterativeTargetPoseSupplier} is a {@code Supplier<Pose2d>} that
-	 * iterates over a number of {@code Supplier<Pose2d>}.
+	 * iterates over a number of {@code Supplier<Pose2d>}s.
 	 * The {@link get()} method of an {@code IterativeTargetPoseSupplier} returns
 	 * the {@code Pose2d} from the current {@code Supplier<Pose2d>} in iteration.
 	 */
@@ -164,8 +164,7 @@ public class PathDriveCommand extends DriveCommand {
 		List<Supplier<Pose2d>> m_targetPoseSuppliers;
 
 		/**
-		 * The index indicating the current {@code Pose2d} to which the robot
-		 * should move.
+		 * The index indicating the current {@code Supplier<Pose2d>} in iteration.
 		 */
 		protected int m_targetPoseIndex = 0;
 

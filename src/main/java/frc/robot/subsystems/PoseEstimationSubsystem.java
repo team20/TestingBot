@@ -177,26 +177,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest (in terms of
-	 * angular displacement) to the robot when the specified {@code Translation2d}
-	 * is applied to the robot.
-	 * 
-	 * @param translation a {@code Translation2d}
-	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the {@code Pose2d} of the {@code AprilTag} that is closest (in terms
-	 *         of angular displacement) to the robot when the specified
-	 *         {@code Translation2d} is applied to the robot
-	 */
-	public Pose2d closestTagPose(Translation2d translation, double distanceThresholdInMeters) {
-		var pose = getEstimatedPose();
-		if (translation.getNorm() > 0)
-			pose = new Pose2d(pose.getTranslation(), translation.getAngle());
-		var i = closestTagID(pose, distanceThresholdInMeters);
-		return i == null ? null : kFieldLayout.getTagPose(i).get().toPose2d();
-	}
-
-	/**
 	 * Determines the ID of the {@code AprilTag} that is closest to the specified
 	 * {@code Pose2d} ({@code null} if no such {@code AprilTag}).
 	 * 
@@ -228,35 +208,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Determines the ID of the {@code AprilTag} that is closest (in terms of
-	 * angular displacement) to the specified {@code Pose2d} ({@code null} if no
-	 * such {@code AprilTag}).
-	 * 
-	 * @param pose a {@code Pose2d}
-	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the ID of the {@code AprilTag} that is closest (in terms of angular
-	 *         displacement) to the specified {@code Pose2d} ({@code null} if no
-	 *         such {@code AprilTag})
-	 */
-	public static Integer closestTagID(Pose2d pose, double distanceThresholdInMeters) {
-		var s = kFieldLayout.getTags().stream()
-				// consider only the tags facing toward the robot
-				.filter(
-						t -> Math.abs(
-								t.pose.getTranslation().toTranslation2d().minus(pose.getTranslation()).getAngle()
-										.minus(t.pose.toPose2d().getRotation()).getDegrees()) > 90)
-				.filter(t -> Math.abs(translationalDisplacement(pose, t.pose.toPose2d())) < distanceThresholdInMeters)
-				// only tags sufficently close
-				.map(t -> Map.entry(t.ID, Math.abs(angularDisplacement(pose, t.pose.toPose2d()).getDegrees())));
-		Optional<Entry<Integer, Double>> closest = s.reduce((e1, e2) -> e1.getValue() < e2.getValue() ? e1 : e2);
-		if (closest.isPresent()) {
-			return closest.get().getKey();
-		} else
-			return null;
-	}
-
-	/**
 	 * Calculates the angular displacement from the estimated {@code Pose2d} of the
 	 * robot to the specified {@code AprilTag}.
 	 * 
@@ -266,7 +217,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	public Rotation2d angularDisplacement(int tagID) {
 		try {
-			return angularDisplacement(this.getEstimatedPose(), kFieldLayout.getTagPose(tagID).get().toPose2d());
+			return angularDisplacement(getEstimatedPose(), kFieldLayout.getTagPose(tagID).get().toPose2d());
 		} catch (Exception e) {
 			return null;
 		}
