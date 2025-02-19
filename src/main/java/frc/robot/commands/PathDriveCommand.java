@@ -39,7 +39,7 @@ public class PathDriveCommand extends DriveCommand {
 			double angleToleranceInDegrees, double intermediateToleranceRatio,
 			Pose2d... targetPoses) {
 		this(driveSubsystem, distanceTolerance, angleToleranceInDegrees, intermediateToleranceRatio,
-				Arrays.stream(targetPoses).map(p -> (Supplier<Pose2d>) (() -> p)).toList());
+				Arrays.stream(targetPoses).toList());
 	}
 
 	/**
@@ -57,9 +57,8 @@ public class PathDriveCommand extends DriveCommand {
 	public PathDriveCommand(DriveSubsystem driveSubsystem,
 			double distanceTolerance,
 			double angleToleranceInDegrees, double intermediateToleranceRatio,
-			List<Supplier<Pose2d>> targetPoseSuppliers) {
-		super(driveSubsystem, distanceTolerance, angleToleranceInDegrees,
-				new IterativeTargetPoseSupplier(targetPoseSuppliers));
+			Supplier<List<Pose2d>> targetPoseSuppliers) {
+		super(driveSubsystem, driveSubsystem::getPose, targetPoseSuppliers, angleToleranceInDegrees, distanceTolerance);
 		m_intermediateToleranceRatio = intermediateToleranceRatio;
 	}
 
@@ -127,75 +126,5 @@ public class PathDriveCommand extends DriveCommand {
 		var diff = targetPose.minus(m_driveSubsystem.getPose());
 		return diff.getTranslation().getNorm() < m_controllerXY.getPositionTolerance()
 				&& Math.abs(diff.getRotation().getRadians()) < m_controllerYaw.getPositionTolerance();
-	}
-
-	/**
-	 * Returns the {@code IterativeTargetPoseSupplier} used by this
-	 * {@code PathDriveCommand}.
-	 * 
-	 * @return the {@code IterativeTargetPoseSupplier} used by this
-	 *         {@code PathDriveCommand}
-	 */
-	protected IterativeTargetPoseSupplier targetPoseSupplier() {
-		return (IterativeTargetPoseSupplier) m_targetPoseSupplier;
-	}
-
-	/**
-	 * An {@code IterativeTargetPoseSupplier} is a {@code Supplier<Pose2d>} that
-	 * iterates over a number of {@code Supplier<Pose2d>}.
-	 * The {@link get()} method of an {@code IterativeTargetPoseSupplier} returns
-	 * the {@code Pose2d} from the current {@code Supplier<Pose2d>} in iteration.
-	 */
-	static class IterativeTargetPoseSupplier implements Supplier<Pose2d> {
-
-		/**
-		 * The {@code Supplier<Pose2d>}s that provide the {@code Pose2d}s to which the
-		 * robot should move.
-		 */
-		List<Supplier<Pose2d>> m_targetPoseSuppliers;
-
-		/**
-		 * The index indicating the current {@code Pose2d} to which the robot
-		 * should move.
-		 */
-		protected int m_targetPoseIndex = 0;
-
-		/**
-		 * Constructs an {@code IterativeTargetPoseSupplier}.
-		 * 
-		 * @param targetPoseSuppliers {@code Supplier<Pose2d>}s that provide the
-		 *        {@code Pose2d}s to which the robot should move
-		 */
-		public IterativeTargetPoseSupplier(List<Supplier<Pose2d>> targetPoseSuppliers) {
-			m_targetPoseSuppliers = targetPoseSuppliers;
-		}
-
-		/**
-		 * Resets this {@code IterativeTargetPoseSupplier}.
-		 */
-		public void reset() {
-			m_targetPoseIndex = 0;
-		}
-
-		/**
-		 * Returns the curent target {@code Pose2d}.
-		 * 
-		 * @return the curent target {@code Pose2d}
-		 */
-		@Override
-		public Pose2d get() {
-			return m_targetPoseSuppliers.get(m_targetPoseIndex++).get();
-		}
-
-		/**
-		 * Determines whether or not there are more {@code Supplier<Pose2d>}s to iterate
-		 * over.
-		 * 
-		 * @return {@code true} if there are more {@code Supplier<Pose2d>}s to iterate
-		 *         over; {@code false} otherwise
-		 */
-		public boolean hasNext() {
-			return m_targetPoseIndex < m_targetPoseSuppliers.size();
-		}
 	}
 }

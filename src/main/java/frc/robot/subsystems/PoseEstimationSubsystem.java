@@ -32,27 +32,20 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
  * of the robot on the field.
  */
 public class PoseEstimationSubsystem extends SubsystemBase {
-
-	/**
-	 * The {@code PhotonCamera}s and {@code PhotonPoseEstimator}s used by this
-	 * {@code PoseEstimationSubsystem}.
-	 */
 	private final Map<PhotonCamera, PhotonPoseEstimator> m_cameras = new HashMap<PhotonCamera, PhotonPoseEstimator>();
-
-	/**
-	 * The {@code PhotonCamera} used by this {@code PoseEstimationSubsystem}.
-	 */
 	private final DriveSubsystem m_driveSubsystem;
 
 	/**
-	 * The standard deviations of model states (smaller values will cause the Kalman
-	 * filter to more trust the estimates).
+	 * Standard deviations of the pose estimate (x position in meters, y position in
+	 * meters, and heading in radians). Increase these numbers to trust your state
+	 * estimate less.
 	 */
 	private static final Vector<N3> stateStdDevs = VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5));
 
 	/**
-	 * The standard deviations of the vision measurements (smaller values will cause
-	 * the Kalman filter to more trust the measurements).
+	 * Standard deviations of the vision pose measurement (x position in meters, y
+	 * position in meters, and heading in radians). Smaller values will cause
+	 * the Kalman filter to trust the Vision data more.
 	 */
 	private static final Vector<N3> visionMeasurementStdDevs = VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(10));
 
@@ -63,16 +56,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	private final SwerveDrivePoseEstimator m_poseEstimator;
 
-	/**
-	 * The {@code StructPublisher} for reporting the detected {@code Pose2d} of the
-	 * robot.
-	 */
 	private final StructPublisher<Pose2d> m_detectedPosePublisher;
-
-	/**
-	 * The {@code StructPublisher} for reporting the estimated {@code Pose2d} of the
-	 * robot.
-	 */
 	private final StructPublisher<Pose2d> m_estimatedPosePublisher;
 
 	/**
@@ -120,16 +104,18 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	@Override
 	public void periodic() {
 		boolean firstCamera = true;
-		for (var e : m_cameras.entrySet()) {
-			var camera = e.getKey();
-			var poseEstimator = e.getValue();
-			for (var r : camera.getAllUnreadResults()) { // for every result r
-				if (firstCamera || r.getTargets().size() > 1) {
-					Optional<EstimatedRobotPose> p = poseEstimator.update(r);
-					if (p.isPresent()) { // if successful
-						EstimatedRobotPose v = p.get(); // get successfully estimated pose
-						m_poseEstimator.addVisionMeasurement(v.estimatedPose.toPose2d(), v.timestampSeconds);
-						m_detectedPosePublisher.set(v.estimatedPose.toPose2d());
+		for (var camEntry : m_cameras.entrySet()) {
+			var camera = camEntry.getKey();
+			var poseEstimator = camEntry.getValue();
+			for (var result : camera.getAllUnreadResults()) { // for every result r
+				if (firstCamera || result.getTargets().size() > 1) { // TODO: use both camera results equally, don't
+																		// prioritize cam1
+					Optional<EstimatedRobotPose> pose = poseEstimator.update(result);
+					if (pose.isPresent()) { // if successful
+						EstimatedRobotPose estPose = pose.get(); // get successfully estimated pose
+						m_poseEstimator
+								.addVisionMeasurement(estPose.estimatedPose.toPose2d(), estPose.timestampSeconds);
+						m_detectedPosePublisher.set(estPose.estimatedPose.toPose2d());
 					}
 				}
 			}
@@ -149,20 +135,23 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Returns the odometry-centric {@code Pose2d} that corresponds to the specified
-	 * field-centric {@code Pose2d}.
+	 * TODO: Do we need this too?
+	 * 
+	 * Returns the odometry-centric {@code Pose2d} of a specific target given the
+	 * target's field-centric {@code Pose2d}.
 	 * 
 	 * @param fieldCentricPose a field-centric {@code Pose2d}
 	 * @return the odometry-centric {@code Pose2d} that corresponds to the specified
 	 *         field-centric {@code Pose2d}
 	 */
-	public Pose2d odometryCentricPose(Pose2d fieldCentricPose) {
+	public Pose2d targetOdometryCentricPose(Pose2d fieldCentricPose) {
 		return m_driveSubsystem.getPose().plus(fieldCentricPose.minus(getEstimatedPose()));
 	}
 
 	/**
-	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest to the robot
-	 * ({@code null} if no such {@code AprilTag}).
+	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest to the
+	 * robot.
+	 * Returns null if there is no such {@code AprilTag}).
 	 * 
 	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
 	 *        which {@code AprilTag}s are considered (maximum: 180)
@@ -212,15 +201,16 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		var s = kFieldLayout.getTags().stream()
 				// consider only the tags facing toward the robot
 				.filter(
-						t -> Math.abs(
-								t.pose.getTranslation().toTranslation2d().minus(pose.getTranslation()).getAngle()
-										.minus(t.pose.toPose2d().getRotation()).getDegrees()) > 90)
+						tag -> Math.abs(
+								tag.pose.getTranslation().toTranslation2d().minus(pose.getTranslation()).getAngle()
+										.minus(tag.pose.toPose2d().getRotation()).getDegrees()) > 90)
 				.filter( // consider only the tags within the angle of coverage
-						t -> Math.abs(
-								angularDisplacement(pose, t.pose.toPose2d()).getDegrees()) < angleOfCoverageInDegrees)
-				.map(t -> Map.entry(t.ID, Math.abs(translationalDisplacement(pose, t.pose.toPose2d())))) // distance
-				.filter(t -> t.getValue() < distanceThresholdInMeters); // only tags sufficently close
-		Optional<Entry<Integer, Double>> closest = s.reduce((e1, e2) -> e1.getValue() < e2.getValue() ? e1 : e2);
+						tag -> Math.abs(
+								angularDisplacement(pose, tag.pose.toPose2d()).getDegrees()) < angleOfCoverageInDegrees)
+				.map(tag -> Map.entry(tag.ID, Math.abs(translationalDisplacement(pose, tag.pose.toPose2d())))) // distance
+				.filter(tag -> tag.getValue() < distanceThresholdInMeters); // only tags sufficently close
+		Optional<Entry<Integer, Double>> closest = s
+				.reduce((tag1, tag2) -> tag1.getValue() < tag2.getValue() ? tag1 : tag2);
 		if (closest.isPresent()) {
 			return closest.get().getKey();
 		} else
@@ -243,33 +233,16 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		var s = kFieldLayout.getTags().stream()
 				// consider only the tags facing toward the robot
 				.filter(
-						t -> Math.abs(
-								t.pose.getTranslation().toTranslation2d().minus(pose.getTranslation()).getAngle()
-										.minus(t.pose.toPose2d().getRotation()).getDegrees()) > 90)
-				.filter(t -> Math.abs(translationalDisplacement(pose, t.pose.toPose2d())) < distanceThresholdInMeters)
+						tag -> (translationalDisplacement(pose, tag.pose.toPose2d()) < distanceThresholdInMeters
+								&& translationalDisplacement(pose, tag.pose.toPose2d()) > 0))
 				// only tags sufficently close
-				.map(t -> Map.entry(t.ID, Math.abs(angularDisplacement(pose, t.pose.toPose2d()).getDegrees())));
-		Optional<Entry<Integer, Double>> closest = s.reduce((e1, e2) -> e1.getValue() < e2.getValue() ? e1 : e2);
+				.map(tag -> Map.entry(tag.ID, Math.abs(angularDisplacement(pose, tag.pose.toPose2d()).getDegrees())));
+		Optional<Entry<Integer, Double>> closest = s
+				.reduce((tag1, tag2) -> tag1.getValue() < tag2.getValue() ? tag1 : tag2);
 		if (closest.isPresent()) {
 			return closest.get().getKey();
 		} else
 			return null;
-	}
-
-	/**
-	 * Calculates the angular displacement from the estimated {@code Pose2d} of the
-	 * robot to the specified {@code AprilTag}.
-	 * 
-	 * @param tagID the ID of the {@code AprilTag}
-	 * @return the angular displacement from the estimated {@code Pose2d} of the
-	 *         robot to the specified {@code AprilTag}
-	 */
-	public Rotation2d angularDisplacement(int tagID) {
-		try {
-			return angularDisplacement(this.getEstimatedPose(), kFieldLayout.getTagPose(tagID).get().toPose2d());
-		} catch (Exception e) {
-			return null;
-		}
 	}
 
 	/**
@@ -282,8 +255,9 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 *         the last {@code Pose2d}
 	 */
 	public static double translationalDisplacement(Pose2d initial, Pose2d last) {
-		var t = last.getTranslation().minus(initial.getTranslation());
-		return Math.abs(t.getAngle().minus(initial.getRotation()).getDegrees()) > 90 ? -t.getNorm() : t.getNorm();
+		var translation = last.getTranslation().minus(initial.getTranslation());
+		return Math.abs(angularDisplacement(initial, last).getDegrees()) > 90 ? -translation.getNorm()
+				: translation.getNorm();
 	}
 
 	/**
@@ -296,8 +270,8 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 *         the last {@code Pose2d}
 	 */
 	public static Rotation2d angularDisplacement(Pose2d initial, Pose2d last) {
-		var t = last.getTranslation().minus(initial.getTranslation());
-		return t.getAngle().minus(initial.getRotation());
+		var translation = last.getTranslation().minus(initial.getTranslation());
+		return translation.getAngle().minus(initial.getRotation());
 	}
 
 	/**

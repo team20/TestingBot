@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
- * This {@code DriveCommand} aims to maneuver the robot to a certain
+ * This {@code DriveCommand2Controllers} aims to maneuver the robot to a certain
  * {@code Pose2d}. It utilizes two {@code ProfiledPIDController}s to precisely
  * control the robot in the x, y, and yaw dimensions.
  * 
@@ -23,9 +23,24 @@ import frc.robot.subsystems.DriveSubsystem;
 public class DriveCommand extends Command {
 
 	/**
-	 * The {@code DriveSubsystem} used by this {@code DriveCommand}.
+	 * The {@code DriveSubsystem} used by this {@code DriveCommand2Controllers}.
 	 */
 	protected DriveSubsystem m_driveSubsystem;
+
+	/**
+	 * The {@code Supplier} providing the current {@code Pose2d} of the robot.
+	 */
+	protected Supplier<Pose2d> m_poseSupplier;
+
+	/**
+	 * The {@code Supplier<Pose2d>} that provides the {@code Pose2d} to which the
+	 * robot should move.
+	 * This is used at the commencement of this {@code DriveCommand2Controllers}
+	 * (i.e.,
+	 * when the scheduler begins to periodically execute this {@code
+	 * DriveCommand}).
+	 */
+	protected Supplier<Pose2d> m_targetPoseSupplier;
 
 	/**
 	 * The {@code ProfiledPIDController} for controlling the robot in the x and y
@@ -42,6 +57,11 @@ public class DriveCommand extends Command {
 	protected ProfiledPIDController m_controllerYaw;
 
 	/**
+	 * The {@code Pose2d} to which the robot should move.
+	 */
+	protected Pose2d m_targetPose;
+
+	/**
 	 * The distance error in meters which is tolerable.
 	 */
 	protected double m_distanceTolerance;
@@ -52,65 +72,76 @@ public class DriveCommand extends Command {
 	protected double m_angleTolerance;
 
 	/**
-	 * The {@code Pose2d} to which the robot should move.
-	 */
-	protected Pose2d m_targetPose;
-
-	/**
-	 * The {@code Supplier<Pose2d>} that provides the {@code Pose2d} to which the
-	 * robot should move.
-	 */
-	protected Supplier<Pose2d> m_targetPoseSupplier;
-
-	/**
-	 * Constructs a new {@code DriveCommand} whose purpose is to move
+	 * Constructs a new {@code DriveCommand2Controllers} whose purpose is to move
 	 * the robot to a certain {@code Pose2d}.
+	 * Takes in {@code Supplier<Pose2d>} for robot pose and target pose.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseSupplier the {@code Supplier} providing the current {@code Pose2d}
+	 *        of the robot
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        {@code Pose2d} to which the robot should move.
+	 *        This is used at the commencement of this
+	 *        {@code DriveCommand2Controllers} (i.e., when the scheduler
+	 *        begins to periodically execute this
+	 *        {@code DriveCommand2Controllers})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
-	 * @param targetPose a {@code Pose2d} to which the robot should move.
 	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, double distanceTolerance, double angleToleranceInDegrees,
-			Pose2d targetPose) {
-		this(driveSubsystem, distanceTolerance, angleToleranceInDegrees, () -> targetPose);
+	public DriveCommand(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance, double angleToleranceInDegrees) {
+		this(driveSubsystem, poseSupplier, targetPoseSupplier, distanceTolerance,
+				angleToleranceInDegrees,
+				new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
+						new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration)),
+				new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
+						new TrapezoidProfile.Constraints(kTurnMaxAngularSpeed,
+								kTurnMaxAcceleration)));
+		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
 	}
 
 	/**
-	 * Constructs a new {@code DriveCommand} whose purpose is to move
+	 * Constructs a new {@code DriveCommand2Controllers} whose purpose is to move
 	 * the robot to a certain {@code Pose2d}.
 	 * 
 	 * @param driveSubsystem the {@code DriveSubsystem} to use
+	 * @param poseSupplier the {@code Supplier} providing the current {@code Pose2d}
+	 *        of the robot
+	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
+	 *        {@code Pose2d} to which the robot should move.
+	 *        This is used at the commencement of this
+	 *        {@code DriveCommand2Controllers} (i.e., when the scheduler
+	 *        begins to periodically execute this
+	 *        {@code DriveCommand2Controllers})
 	 * @param distanceTolerance the distance error in meters which is tolerable
 	 * @param angleToleranceInDegrees the angle error in degrees which is tolerable
-	 * @param targetPoseSupplier a {@code Supplier<Pose2d>} that provides the
-	 *        {@code Pose2d} to which the robot should move. This is used at the
-	 *        commencement of the {@code DriveCommand} (i.e., when the scheduler
-	 *        begins to periodically execute the {@code DriveCommand})
+	 * @param controllerXY the {@code ProfiledPIDController} for controlling the
+	 *        robot in the x and y dimensions in meters
+	 * @param controllerYaw the {@code ProfiledPIDController} for controlling the
+	 *        robot in the yaw dimension in angles
+	 * 
 	 */
-	public DriveCommand(DriveSubsystem driveSubsystem, double distanceTolerance, double angleToleranceInDegrees,
-			Supplier<Pose2d> targetPoseSupplier) {
+	public DriveCommand(DriveSubsystem driveSubsystem, Supplier<Pose2d> poseSupplier,
+			Supplier<Pose2d> targetPoseSupplier, double distanceTolerance,
+			double angleToleranceInDegrees, ProfiledPIDController controllerXY, ProfiledPIDController controllerYaw) {
 		m_driveSubsystem = driveSubsystem;
+		m_poseSupplier = poseSupplier;
+		m_targetPoseSupplier = targetPoseSupplier;
 		m_distanceTolerance = distanceTolerance;
 		m_angleTolerance = Math.toRadians(angleToleranceInDegrees);
-		m_controllerXY = new ProfiledPIDController(kDriveP, kDriveI, kDriveD,
-				new TrapezoidProfile.Constraints(kDriveMaxSpeed, kDriveMaxAcceleration));
-		m_controllerYaw = new ProfiledPIDController(kTurnP, kTurnI, kTurnD,
-				new TrapezoidProfile.Constraints(kTurnMaxAngularSpeed,
-						kTurnMaxAcceleration));
-		m_controllerYaw.enableContinuousInput(0, 2 * Math.PI);
-		m_targetPoseSupplier = targetPoseSupplier;
+		m_controllerXY = controllerXY;
+		m_controllerYaw = controllerYaw;
 		addRequirements(m_driveSubsystem);
 	}
 
 	/**
-	 * Is invoked at the commencement of this {@code DriveCommand} (i.e,
+	 * Is invoked at the commencement of this {@code DriveCommand2Controllers} (i.e,
 	 * when the scheduler begins to periodically execute this
-	 * {@code DriveCommand}).
+	 * {@code DriveCommand2Controllers}).
 	 */
 	@Override
 	public void initialize() {
-		Pose2d pose = m_driveSubsystem.getPose();
+		Pose2d pose = m_poseSupplier.get();
 		m_targetPose = pose;
 		try {
 			m_targetPose = m_targetPoseSupplier.get();
@@ -126,7 +157,7 @@ public class DriveCommand extends Command {
 
 	/**
 	 * Is invoked periodically by the scheduler until this
-	 * {@code DriveCommand} is either ended or interrupted.
+	 * {@code DriveCommand2Controllers} is either ended or interrupted.
 	 */
 	@Override
 	public void execute() {
@@ -140,17 +171,19 @@ public class DriveCommand extends Command {
 	 *         target
 	 */
 	public ChassisSpeeds chassisSpeeds() {
-		var currentPose = m_driveSubsystem.getPose();
+		var currentPose = m_poseSupplier.get();
 		Translation2d current2target = m_targetPose.getTranslation()
 				.minus(currentPose.getTranslation());
 		double velocityX = 0, velocityY = 0;
-		double distance = current2target.getNorm();
-		double speed = Math.abs(m_controllerXY.calculate(distance, 0));
-		if (speed > 1e-6) {
+		try {
+			double distance = current2target.getNorm();
+			double speed = Math.abs(m_controllerXY.calculate(distance, 0));
 			speed = applyThreshold(speed, kDriveMinSpeed);
 			var angle = current2target.getAngle();
 			velocityX = speed * angle.getCos();
 			velocityY = speed * angle.getSin();
+		} catch (Exception e) {
+			// TODO: Does this need a try-catch block?
 		}
 		double angularVelocityRadiansPerSecond = m_controllerYaw
 				.calculate(currentPose.getRotation().getRadians(), m_targetPose.getRotation().getRadians());
@@ -159,10 +192,10 @@ public class DriveCommand extends Command {
 	}
 
 	/**
-	 * Is invoked once this {@code DriveCommand} is either ended or
+	 * Is invoked once this {@code DriveCommand2Controllers} is either ended or
 	 * interrupted.
 	 * 
-	 * @param interrupted indicates if this {@code DriveCommand} was
+	 * @param interrupted indicates if this {@code DriveCommand2Controllers} was
 	 *        interrupted
 	 */
 	@Override
@@ -171,9 +204,9 @@ public class DriveCommand extends Command {
 	}
 
 	/**
-	 * Determines whether or not this {@code DriveCommand} needs to end.
+	 * Determines whether or not this {@code DriveCommand2Controllers} needs to end.
 	 * 
-	 * @return {@code true} if this {@code DriveCommand} needs to end;
+	 * @return {@code true} if this {@code DriveCommand2Controllers} needs to end;
 	 *         {@code false} otherwise
 	 */
 	@Override

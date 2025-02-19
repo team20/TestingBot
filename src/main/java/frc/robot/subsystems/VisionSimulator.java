@@ -42,7 +42,7 @@ public class VisionSimulator extends SubsystemBase {
 	/**
 	 * The error ratio in measurements for updating the odometry of the robot.
 	 */
-	private double m_measurmentErrorRatio;
+	private double m_measurementErrorRatio;
 
 	/**
 	 * The {@code StructPublisher} for reporting the {@code Pose2d} of the
@@ -69,7 +69,7 @@ public class VisionSimulator extends SubsystemBase {
 		m_visionSimulator = new VisionSystemSim("Simulator");
 		m_visionSimulator.addAprilTags(kFieldLayout);
 		m_visionSimulator.resetRobotPose(initialPose);
-		m_measurmentErrorRatio = measurmentErrorRatio;
+		m_measurementErrorRatio = measurmentErrorRatio;
 		m_posePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Pose@Simulation", Pose2d.struct)
 				.publish();
@@ -80,17 +80,18 @@ public class VisionSimulator extends SubsystemBase {
 	 */
 	@Override
 	public void periodic() {
-		var p = m_driveSubsystem.getPose();
-		var pose = m_visionSimulator.getRobotPose().toPose2d();
+		var pose1 = m_driveSubsystem.getPose();
+		var pose2 = m_visionSimulator.getRobotPose().toPose2d();
 		if (m_previousOdometryPose != null) {
-			var t = p.minus(m_previousOdometryPose);
-			t = new Transform2d(change(t.getX(), m_measurmentErrorRatio), change(t.getY(), m_measurmentErrorRatio),
-					Rotation2d.fromDegrees(change(t.getRotation().getDegrees(), m_measurmentErrorRatio)));
-			pose = pose.plus(t);
+			var odometryDiff = pose1.minus(m_previousOdometryPose);
+			odometryDiff = new Transform2d(change(odometryDiff.getX(), m_measurementErrorRatio),
+					change(odometryDiff.getY(), m_measurementErrorRatio),
+					Rotation2d.fromDegrees(change(odometryDiff.getRotation().getDegrees(), m_measurementErrorRatio)));
+			pose2 = pose2.plus(odometryDiff);
 		}
-		m_previousOdometryPose = p;
-		m_visionSimulator.update(pose);
-		m_posePublisher.set(pose);
+		m_previousOdometryPose = pose1;
+		m_visionSimulator.update(pose2);
+		m_posePublisher.set(pose2);
 	}
 
 	/**
@@ -127,11 +128,11 @@ public class VisionSimulator extends SubsystemBase {
 	 * Randomly changes the specified value using the specified ratio.
 	 * 
 	 * @param x a value
-	 * @param r the ratio by which the value can be increased or decreased
+	 * @param ratio the ratio by which the value can be increased or decreased
 	 * @return the resulting value
 	 */
-	private double change(double x, double r) {
-		return x * (1 - r + 2 * r * random.nextDouble());
+	private double change(double x, double ratio) {
+		return x * (1 - ratio + 2 * ratio * random.nextDouble());
 	}
 
 }
