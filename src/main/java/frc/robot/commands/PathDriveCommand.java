@@ -18,6 +18,16 @@ import frc.robot.subsystems.DriveSubsystem;
 public class PathDriveCommand extends DriveCommand {
 
 	/**
+	 * The distance error in meters which is tolerable.
+	 */
+	protected double m_distanceTolerance;
+
+	/**
+	 * The angle error in radians which is tolerable.
+	 */
+	protected double m_angleTolerance;
+
+	/**
 	 * The distance error in meters which is tolerable for intermeidate
 	 * target {@code Pose2d}s.
 	 */
@@ -68,6 +78,8 @@ public class PathDriveCommand extends DriveCommand {
 			List<Supplier<Pose2d>> targetPoseSuppliers) {
 		super(driveSubsystem, distanceTolerance, angleToleranceInDegrees,
 				new IterativeTargetPoseSupplier(targetPoseSuppliers));
+		m_distanceTolerance = distanceTolerance;
+		m_angleTolerance = Math.toRadians(angleToleranceInDegrees);
 		m_intermediateDistanceTolerance = intermediateDistanceTolerance;
 		m_intermediateAngleTolerance = Math.toRadians(intermediateAngleToleranceInDegrees);
 	}
@@ -115,7 +127,7 @@ public class PathDriveCommand extends DriveCommand {
 	 */
 	@Override
 	public boolean isFinished() {
-		if (alignedTo(m_targetPose)) {
+		if (at(m_targetPose)) {
 			if (targetPoseSupplier().hasNext())
 				moveToNextTargetPose();
 			else
@@ -132,7 +144,7 @@ public class PathDriveCommand extends DriveCommand {
 	 * @return {@code true} if the robot is sufficiently aligned to the specified
 	 *         target {@code Pose2d}; {@code false} otherwise
 	 */
-	boolean alignedTo(Pose2d targetPose) {
+	boolean at(Pose2d targetPose) {
 		var diff = targetPose.minus(m_driveSubsystem.getPose());
 		return diff.getTranslation().getNorm() < m_controllerXY.getPositionTolerance()
 				&& Math.abs(diff.getRotation().getRadians()) < m_controllerYaw.getPositionTolerance();
