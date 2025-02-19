@@ -2,10 +2,13 @@ package frc.robot;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
 public class Constants {
@@ -124,8 +127,13 @@ public class Constants {
 	 */
 	public static AprilTagFieldLayout kFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
 
-	public static final class RobotConstants {
-
+	public static final class VisionConstants {
+		/**
+		 * Standard deviations of the pose estimate (x position in meters, y position in
+		 * meters, and heading in radians). Increase these numbers to trust your state
+		 * estimate less.
+		 */
+		public static final Vector<N3> kStateStdDevs = VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5));
 		/**
 		 * The {@code Transform3d} expressing the pose of the first camera relative to
 		 * the pose of the robot.

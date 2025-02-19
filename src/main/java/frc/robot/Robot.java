@@ -5,7 +5,7 @@
 package frc.robot;
 
 import static frc.robot.Constants.*;
-import static frc.robot.Constants.RobotConstants.*;
+import static frc.robot.Constants.VisionConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
 import java.util.Map;

@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static frc.robot.Constants.*;
+import static frc.robot.Constants.VisionConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,13 +37,6 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	private final DriveSubsystem m_driveSubsystem;
 
 	/**
-	 * Standard deviations of the pose estimate (x position in meters, y position in
-	 * meters, and heading in radians). Increase these numbers to trust your state
-	 * estimate less.
-	 */
-	private static final Vector<N3> stateStdDevs = VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5));
-
-	/**
 	 * Standard deviations of the vision pose measurement (x position in meters, y
 	 * position in meters, and heading in radians). Smaller values will cause
 	 * the Kalman filter to trust the Vision data more.
@@ -72,7 +66,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				driveSubsystem.getHeading(),
 				driveSubsystem.getModulePositions(),
 				new Pose2d(),
-				stateStdDevs,
+				kStateStdDevs,
 				visionMeasurementStdDevs);
 		m_detectedPosePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Pose@PhotonPoseEstimator", Pose2d.struct)
@@ -107,7 +101,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 		for (var camEntry : m_cameras.entrySet()) {
 			var camera = camEntry.getKey();
 			var poseEstimator = camEntry.getValue();
-			for (var result : camera.getAllUnreadResults()) { // for every result r
+			for (var result : camera.getAllUnreadResults()) { // for every result
 				if (firstCamera || result.getTargets().size() > 1) { // TODO: use both camera results equally, don't
 																		// prioritize cam1
 					Optional<EstimatedRobotPose> pose = poseEstimator.update(result);
@@ -149,40 +143,27 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest to the
-	 * robot.
-	 * Returns null if there is no such {@code AprilTag}).
+	 * Finds the pose of the {@code AprilTag} that is closest to the robot, either
+	 * in terms of distance or angle (based on user selection).
 	 * 
-	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
-	 *        which {@code AprilTag}s are considered (maximum: 180)
+	 * @param angleOfCoverage the angular coverage (in degrees) within
+	 *        which AprilTags are considered (maximum: 180)
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the {@code Pose2d} of the {@code AprilTag} that is closest to the
-	 *         robot ({@code null} if no such {@code AprilTag})
+	 *        which AprilTags are considered
+	 * @param isClosestByDistance true for distance-based tag filtering.
+	 *        false for angle-based tag filtering.
+	 * @return the {@code Pose2d} of the {@code AprilTag} closest to the robot.
+	 *         Returns null if there is no such AprilTag.
+	 * @apiNote
 	 */
-	public Pose2d closestTagPose(double angleOfCoverageInDegrees, double distanceThresholdInMeters) {
-		var i = closestTagID(getEstimatedPose(), angleOfCoverageInDegrees, distanceThresholdInMeters);
-		return i == null ? null : kFieldLayout.getTagPose(i).get().toPose2d();
-	}
-
-	/**
-	 * Finds the {@code Pose2d} of the {@code AprilTag} that is closest (in terms of
-	 * angular displacement) to the robot when the specified {@code Translation2d}
-	 * is applied to the robot.
-	 * 
-	 * @param translation a {@code Translation2d}
-	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which {@code AprilTag}s are considered
-	 * @return the {@code Pose2d} of the {@code AprilTag} that is closest (in terms
-	 *         of angular displacement) to the robot when the specified
-	 *         {@code Translation2d} is applied to the robot
-	 */
-	public Pose2d closestTagPose(Translation2d translation, double distanceThresholdInMeters) {
-		var pose = getEstimatedPose();
-		if (translation.getNorm() > 0)
-			pose = new Pose2d(pose.getTranslation(), translation.getAngle());
-		var i = closestTagID(pose, distanceThresholdInMeters);
-		return i == null ? null : kFieldLayout.getTagPose(i).get().toPose2d();
+	public Pose2d closestTagPose(Optional<Double> angleOfCoverage, double distanceThresholdInMeters,
+			boolean isClosestByDistance) {
+		var id = (isClosestByDistance)
+				? distanceClosestTagID( // returns ID of tag closest in terms of distance
+						getEstimatedPose(), distanceThresholdInMeters, angleOfCoverage)
+				: angleClosestTagID( // returns ID of tag closest in terms of angular displacement
+						getEstimatedPose(), distanceThresholdInMeters, angleOfCoverage);
+		return id == null ? null : kFieldLayout.getTagPose(id).get().toPose2d();
 	}
 
 	/**
@@ -190,26 +171,26 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * {@code Pose2d} ({@code null} if no such {@code AprilTag}).
 	 * 
 	 * @param pose a {@code Pose2d}
-	 * @param angleOfCoverageInDegrees the angular coverage (in degrees) within
+	 * @param angleOfCoverage the angular coverage (in degrees) within
 	 *        which {@code AprilTag}s are considered (maximum: 180)
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
 	 *        which {@code AprilTag}s are considered
 	 * @return the ID of the {@code AprilTag} that is closest to the specified
 	 *         {@code Pose2d} ({@code null} if no such {@code AprilTag})
 	 */
-	public static Integer closestTagID(Pose2d pose, double angleOfCoverageInDegrees, double distanceThresholdInMeters) {
-		var s = kFieldLayout.getTags().stream()
-				// consider only the tags facing toward the robot
-				.filter(
-						tag -> Math.abs(
-								tag.pose.getTranslation().toTranslation2d().minus(pose.getTranslation()).getAngle()
-										.minus(tag.pose.toPose2d().getRotation()).getDegrees()) > 90)
-				.filter( // consider only the tags within the angle of coverage
-						tag -> Math.abs(
-								angularDisplacement(pose, tag.pose.toPose2d()).getDegrees()) < angleOfCoverageInDegrees)
-				.map(tag -> Map.entry(tag.ID, Math.abs(translationalDisplacement(pose, tag.pose.toPose2d())))) // distance
-				.filter(tag -> tag.getValue() < distanceThresholdInMeters); // only tags sufficently close
+	public static Integer distanceClosestTagID(Pose2d pose, double distanceThresholdInMeters,
+			Optional<Double> angleOfCoverage) {
+		var s = kFieldLayout.getTags().stream();
+		if (angleOfCoverage.isPresent()) {
+			s.filter(
+					tag -> (translationalDisplacement(pose, tag.pose.toPose2d()) < distanceThresholdInMeters
+							&& translationalDisplacement(pose, tag.pose.toPose2d()) > 0));
+		} else {
+			s.filter(tag -> Math.abs(angularDisplacement(pose, tag.pose.toPose2d()).getDegrees()) < 90);
+		}
 		Optional<Entry<Integer, Double>> closest = s
+				.map(tag -> Map.entry(tag.ID, Math.abs(translationalDisplacement(pose, tag.pose.toPose2d()))))
+				.filter(tag -> tag.getValue() < distanceThresholdInMeters)
 				.reduce((tag1, tag2) -> tag1.getValue() < tag2.getValue() ? tag1 : tag2);
 		if (closest.isPresent()) {
 			return closest.get().getKey();
@@ -225,19 +206,25 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * @param pose a {@code Pose2d}
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
 	 *        which {@code AprilTag}s are considered
+	 * @param angleOfCoverage The angle of coverage (in degrees) TODO
 	 * @return the ID of the {@code AprilTag} that is closest (in terms of angular
 	 *         displacement) to the specified {@code Pose2d} ({@code null} if no
 	 *         such {@code AprilTag})
 	 */
-	public static Integer closestTagID(Pose2d pose, double distanceThresholdInMeters) {
-		var s = kFieldLayout.getTags().stream()
-				// consider only the tags facing toward the robot
-				.filter(
-						tag -> (translationalDisplacement(pose, tag.pose.toPose2d()) < distanceThresholdInMeters
-								&& translationalDisplacement(pose, tag.pose.toPose2d()) > 0))
-				// only tags sufficently close
-				.map(tag -> Map.entry(tag.ID, Math.abs(angularDisplacement(pose, tag.pose.toPose2d()).getDegrees())));
+	public static Integer angleClosestTagID(Pose2d pose, double distanceThresholdInMeters,
+			Optional<Double> angleOfCoverage) {
+		var s = kFieldLayout.getTags().stream();
+		if (angleOfCoverage.isPresent()) {
+			s.filter(
+					tag -> Math
+							.abs(angularDisplacement(pose, tag.pose.toPose2d()).getDegrees()) < angleOfCoverage
+									.get());
+		} else {
+			s.filter(tag -> Math.abs(angularDisplacement(pose, tag.pose.toPose2d()).getDegrees()) < 90);
+		}
 		Optional<Entry<Integer, Double>> closest = s
+				.map(tag -> Map.entry(tag.ID, Math.abs(translationalDisplacement(pose, tag.pose.toPose2d()))))
+				.filter(tag -> tag.getValue() < distanceThresholdInMeters)
 				.reduce((tag1, tag2) -> tag1.getValue() < tag2.getValue() ? tag1 : tag2);
 		if (closest.isPresent()) {
 			return closest.get().getKey();
