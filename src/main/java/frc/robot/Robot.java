@@ -16,9 +16,13 @@ import java.util.function.Supplier;
 
 import org.littletonrobotics.urcl.URCL;
 import org.photonvision.PhotonCamera;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -35,7 +39,6 @@ import frc.robot.Constants.ControllerConstants;
 import frc.robot.commands.DriveCommand;
 import frc.robot.commands.PathDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.PhotonCameraSimulator;
 import frc.robot.subsystems.PoseEstimationSubsystem;
 import frc.robot.subsystems.VisionSimulator;
 
@@ -51,11 +54,26 @@ public class Robot extends TimedRobot {
 	private final PowerDistribution m_pdh = new PowerDistribution();
 	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
 			pose(kFieldLayout.getFieldLength() / 2 + 2.5, 1.91 + .3, 180), 0.01);
+	SimCameraProperties cameraProp = new SimCameraProperties() {
+		{
+			setCalibration(640, 480, Rotation2d.fromDegrees(100));
+			// Approximate detection noise with average and standard deviation error in
+			// pixels.
+			setCalibError(0.25, 0.08);
+			// Set the camera image capture framerate (Note: this is limited by robot loop
+			// rate).
+			setFPS(20);
+			// The average and standard deviation in milliseconds of image data latency.
+			setAvgLatencyMs(35);
+			setLatencyStdDevMs(5);
+
+		}
+	};
 	private final PhotonCamera m_camera1 = RobotBase.isSimulation()
-			? new PhotonCameraSimulator("Camera1", kRobotToCamera1, m_visionSimulator, 3, 0.1)
+			? cameraSim("Camera1", kRobotToCamera1, m_visionSimulator, cameraProp)
 			: new PhotonCamera("Cool camera");
 	private final PhotonCamera m_camera2 = RobotBase.isSimulation()
-			? new PhotonCameraSimulator("Camera2", kRobotToCamera2, m_visionSimulator, 3, 0.1)
+			? cameraSim("Camera2", kRobotToCamera2, m_visionSimulator, cameraProp)
 			: new PhotonCamera("Cool camera2");
 	private final PoseEstimationSubsystem m_poseEstimationSubsystem = new PoseEstimationSubsystem(m_driveSubsystem)
 			.addCamera(m_camera1, kRobotToCamera1)
@@ -108,6 +126,26 @@ public class Robot extends TimedRobot {
 						40, "FL Drive", 41, "FL Turn"));
 		DriverStation.startDataLog(DataLogManager.getLog());
 		bindDriveControls();
+	}
+
+	/**
+	 * Constructs a {@code PhotonCamera} that provides simulation.
+	 * 
+	 * @param cameraName the name of the {@code PhotonCamera}
+	 * @param robotToCamera the {@code Pose2d} of the {@code PhotonCamera} relative
+	 *        to the center of the robot
+	 * @param m_visionSimulator the {@code VisionSimulator} to use
+	 * @param cameraProp the {@code SimCameraProperties} to use
+	 * @return the constructed {@code PhotonCamera}
+	 */
+	PhotonCamera cameraSim(String cameraName, Transform3d robotToCamera, VisionSimulator m_visionSimulator,
+			SimCameraProperties cameraProp) {
+		PhotonCamera camera = new PhotonCamera(cameraName);
+		PhotonCameraSim cameraSim = new PhotonCameraSim(camera, cameraProp);
+		cameraSim.enableProcessedStream(true);
+		cameraSim.enableDrawWireframe(true);
+		m_visionSimulator.addCamera(cameraSim, robotToCamera);
+		return camera;
 	}
 
 	public void bindDriveControls() {
