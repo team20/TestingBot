@@ -53,7 +53,7 @@ public class Robot extends TimedRobot {
 			ControllerConstants.kDriverControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
 	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
-			pose(kFieldLayout.getFieldLength() / 2 + 2.5, 1.91 + .3, 180), 0.01);
+			pose(kFieldLayout.getFieldLength() / 2 - 4.5, 1.91 + .3, 0), 0.01);
 	SimCameraProperties cameraProp = new SimCameraProperties() {
 		{
 			setCalibration(640, 480, Rotation2d.fromDegrees(100));
@@ -87,11 +87,30 @@ public class Robot extends TimedRobot {
 
 		double distanceTolerance = 0.01;
 		double angleToleranceInDegrees = 1.0;
-		double intermediateDistanceTolerance = 0.16;
-		double intermediateAngleToleranceInDegrees = 16.0;
+		double intermediateDistanceTolerance = 0.08;
+		double intermediateAngleToleranceInDegrees = 8.0;
 
 		m_testSelector.addOption("Check All Subsystems in Pitt", CommandComposer.testAllSubsystems());
 		m_testSelector.addOption("Check All Subsystems on Field", CommandComposer.testAllSubsystems());
+		m_testSelector
+				.addOption(
+						"Quickly Align to AprilTags 12, 13, 17, 18, and 19",
+						CommandComposer.alignToTags(
+								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
+								intermediateAngleToleranceInDegrees,
+								List.of(transform(1.5, 0, 180), transform(1.0, 0, 180), transform(.8, 0, 180)),
+								transform(1.5, 0, 180), 18, 17, 12, 17, 18, 19, 13, 19, 18));
+		m_testSelector
+				.addOption(
+						"Quickly Align AprilTags 17, 18, 19, 20, 21, and 22",
+						CommandComposer.alignToTags(
+								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
+								intermediateAngleToleranceInDegrees,
+								List.of(
+										transform(1.5, 0.33 / 2, 180), transform(1.0, 0.33 / 2, 180),
+										transform(.5, 0.33 / 2, 180)),
+								transform(1.5, 0.33 / 2, 180),
+								17, 18, 19, 20, 21, 22, 17));
 		m_testSelector
 				.addOption(
 						"Quickly Align to AprilTags 1, 2, 6, 7, and 8",
@@ -153,8 +172,10 @@ public class Robot extends TimedRobot {
 				m_driveSubsystem.driveCommand(
 						() -> -m_driverController.getLeftY(),
 						() -> -m_driverController.getLeftX(),
-						() -> m_driverController.getL2Axis() - m_driverController.getR2Axis(),
-						() -> !m_driverController.getHID().getSquareButton()));
+						() -> -m_driverController.getRightY(),
+						() -> -m_driverController.getRightX(),
+						m_driverController.getHID()::getSquareButton)); // makes the robot robot-oriented
+		m_driverController.options().onTrue(m_driveSubsystem.resetHeading());
 		m_driverController.square().whileTrue(
 				driveWithAlignmentCommand(
 						() -> -m_driverController.getLeftY(),

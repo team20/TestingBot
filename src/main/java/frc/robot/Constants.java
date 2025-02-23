@@ -50,7 +50,8 @@ public class Constants {
 
 		public static final double kDriveGearRatio = 6.12;
 		public static final double kSteerGearRatio = 150.0 / 7;
-		public static final double kWheelDiameter = Units.inchesToMeters(3.67);
+		// public static final double kWheelDiameter = Units.inchesToMeters(3.67);
+		public static final double kWheelDiameter = Units.inchesToMeters(3.74);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
 
 		public static final double kMetersPerMotorRotation = kWheelCircumference / kDriveGearRatio;
@@ -76,9 +77,9 @@ public class Constants {
 		public static final double kDriveD = 0;
 		public static final double kDriveMaxAcceleration = 0.75 * kDriveMaxSpeed; // kDriveMaxSpeed in 1.5 sec
 
-		public static final double kTurnP = 5;
+		public static final double kTurnP = 10;
 		public static final double kTurnI = 0;
-		public static final double kTurnD = 0;
+		public static final double kTurnD = 0.1;
 		public static final double kTurnMaxAcceleration = 0.75 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1.5
 																						// sec
 

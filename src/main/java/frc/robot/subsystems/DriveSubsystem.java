@@ -16,8 +16,10 @@ import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -55,9 +57,12 @@ public class DriveSubsystem extends SubsystemBase {
 	private final StructPublisher<ChassisSpeeds> m_currentChassisSpeedsPublisher;
 	private final StructArrayPublisher<SwerveModuleState> m_targetModuleStatePublisher;
 	private final StructArrayPublisher<SwerveModuleState> m_currentModuleStatePublisher;
+	private final PIDController m_orientationController = new PIDController(kTurnP, kTurnI,
+			kTurnD);
 
 	/** Creates a new DriveSubsystem. */
 	public DriveSubsystem() {
+		m_orientationController.enableContinuousInput(0, 2 * Math.PI);
 		m_posePublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Pose@DriveSubsystem", Pose2d.struct)
 				.publish();
@@ -273,22 +278,61 @@ public class DriveSubsystem extends SubsystemBase {
 	}
 
 	/**
+	 * Creates a {@code ChassisSpeeds} instance to drive the robot with joystick
+	 * input.
+	 *
+	 * @param forwardSpeed Forward speed supplier. Positive values make the robot
+	 *        go forward (+X direction).
+	 * @param strafeSpeed Strafe speed supplier. Positive values make the robot
+	 *        go to the left (+Y direction).
+	 * @param forwardOrientation Forward orientation supplier. Positive values make
+	 *        the robot face forward (+X direction).
+	 * @param strafeOrientation Strafe orientation supplier. Positive values make
+	 *        the robot face left (+Y direction).
+	 * @param isRobotRelative Supplier for determining if driving should be robot
+	 *        relative.
+	 * @return a {@code ChassisSpeeds} instance to drive the robot with joystick
+	 *         input
+	 */
+	public ChassisSpeeds chassisSpeeds(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
+			DoubleSupplier forwardOrientation, DoubleSupplier strafeOrientation) {
+		var orientation = new Translation2d(forwardOrientation.getAsDouble(), strafeOrientation.getAsDouble());
+		double rotSpeed = 0;
+		if (orientation.getNorm() > 0.05)
+			rotSpeed = m_orientationController
+					.calculate(getHeading().getRadians(), orientation.getAngle().getRadians());
+
+		double fwdSpeed = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);
+		fwdSpeed = Math.signum(fwdSpeed) * Math.pow(fwdSpeed, 2) * kTeleopDriveMaxSpeed;
+
+		double strSpeed = MathUtil.applyDeadband(strafeSpeed.getAsDouble(), ControllerConstants.kDeadzone);
+		strSpeed = Math.signum(strSpeed) * Math.pow(strSpeed, 2) * kTeleopDriveMaxSpeed;
+
+		return chassisSpeeds(fwdSpeed, strSpeed, rotSpeed);
+	}
+
+	/**
 	 * Creates a command to drive the robot with joystick input.
 	 *
 	 * @param forwardSpeed Forward speed supplier. Positive values make the robot
 	 *        go forward (+X direction).
 	 * @param strafeSpeed Strafe speed supplier. Positive values make the robot
 	 *        go to the left (+Y direction).
-	 * @param rotation Rotation speed supplier. Positive values make the
-	 *        robot rotate CCW.
-	 * @param isFieldRelative Supplier for determining if driving should be field
+	 * @param forwardOrientation Forward orientation supplier. Positive values make
+	 *        the robot face forward (+X direction).
+	 * @param strafeOrientation Strafe orientation supplier. Positive values make
+	 *        the
+	 *        robot face left (+Y direction).
+	 * @param isRobotRelative Supplier for determining if driving should be robot
 	 *        relative.
 	 * @return A command to drive the robot.
 	 */
 	public Command driveCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier rotation, BooleanSupplier isFieldRelative) {
+			DoubleSupplier forwardOrientation, DoubleSupplier strafeOrientation, BooleanSupplier isRobotRelative) {
 		return run(() -> {
-			drive(chassisSpeeds(forwardSpeed, strafeSpeed, rotation), isFieldRelative.getAsBoolean());
+			drive(
+					chassisSpeeds(forwardSpeed, strafeSpeed, forwardOrientation, strafeOrientation),
+					!isRobotRelative.getAsBoolean());
 		}).withName("DefaultDriveCommand");
 	}
 
@@ -297,11 +341,11 @@ public class DriveSubsystem extends SubsystemBase {
 	 * 
 	 * @return A command to reset the gyro heading.
 	 */
-	public Command resetHeadingCommand() {
+	public Command resetHeading() {
 		return runOnce(m_gyro::zeroYaw).withName("ResetHeadingCommand");
 	}
 
-	public Command resetOdometryCommand(Pose2d pose) {
+	public Command resetOdometry(Pose2d pose) {
 		return runOnce(() -> m_odometry.resetPosition(getHeading(), getModulePositions(), pose))
 				.withName("ResetOdometryCommand");
 	}
