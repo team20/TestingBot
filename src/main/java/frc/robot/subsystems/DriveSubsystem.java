@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Constants.ControllerConstants.*;
 import static frc.robot.Constants.DriveConstants.*;
 
 import java.util.function.BooleanSupplier;
@@ -203,12 +204,17 @@ public class DriveSubsystem extends SubsystemBase {
 
 			// Get the forward, strafe, and rotation speed, using a deadband on the joystick
 			// input so slight movements don't move the robot
-			double rotSpeed = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
-			double threshold = Math.max(ControllerConstants.kAbsoluteTurnDeadzone, rotSpeed);
-			rotSpeed *= kTurnSpeedMultiplier;
 
-			if (t.getNorm() > threshold)
+			double rotSpeed = 0.0;
+			if (t.getNorm() > kAbsoluteTurnDeadzone)
 				rotSpeed = m_absoluteAngleController.calculate(getHeading().getRadians(), t.getAngle().getRadians());
+
+			double newSpeed = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
+			if (Math.abs(newSpeed) > 0) {
+				rotSpeed = newSpeed;
+				rotSpeed *= kTurnSpeedMultiplier;
+			}
+
 			rotSpeed = Math.signum(rotSpeed) * Math.min(Math.abs(rotSpeed), kTeleopMaxTurnVoltage);
 
 			double fwdSpeed = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);

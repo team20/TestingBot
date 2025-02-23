@@ -10,6 +10,7 @@ public class Constants {
 		public static final double kDeadzone = 0.05;
 		public static final double kAbsoluteTurnDeadzone = 0.5;
 		public static final double kTriggerDeadzone = .05;
+
 	}
 
 	public static final class DriveConstants {
