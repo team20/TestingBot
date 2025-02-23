@@ -14,8 +14,10 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -46,9 +48,12 @@ public class DriveSubsystem extends SubsystemBase {
 	private final StructPublisher<Pose2d> m_posePublisher;
 	private final StructArrayPublisher<SwerveModuleState> m_targetModuleStatePublisher;
 	private final StructArrayPublisher<SwerveModuleState> m_currentModuleStatePublisher;
+	private final PIDController m_absoluteAngleController;
 
 	/** Creates a new DriveSubsystem. */
 	public DriveSubsystem() {
+		m_absoluteAngleController = new PIDController(5, 0, 0);
+		m_absoluteAngleController.enableContinuousInput(-Math.PI, Math.PI);
 		m_posePublisher = NetworkTableInstance.getDefault().getStructTopic("/SmartDashboard/Pose", Pose2d.struct)
 				.publish();
 		m_targetModuleStatePublisher = NetworkTableInstance.getDefault()
@@ -190,12 +195,21 @@ public class DriveSubsystem extends SubsystemBase {
 	 * @return A command to drive the robot.
 	 */
 	public Command driveCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier rotation, BooleanSupplier isFieldRelative) {
+			DoubleSupplier rotation, DoubleSupplier absoluteRotationForward, DoubleSupplier absoluteRotationStrafe,
+			BooleanSupplier isFieldRelative) {
 		return run(() -> {
+			Translation2d t = new Translation2d(absoluteRotationStrafe.getAsDouble(),
+					absoluteRotationForward.getAsDouble());
+
 			// Get the forward, strafe, and rotation speed, using a deadband on the joystick
 			// input so slight movements don't move the robot
 			double rotSpeed = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
-			rotSpeed = Math.signum(rotSpeed) * Math.pow(rotSpeed, 2) * kTeleopMaxTurnVoltage;
+			double threshold = Math.max(ControllerConstants.kAbsoluteTurnDeadzone, rotSpeed);
+			rotSpeed *= kTurnSpeedMultiplier;
+
+			if (t.getNorm() > threshold)
+				rotSpeed = m_absoluteAngleController.calculate(getHeading().getRadians(), t.getAngle().getRadians());
+			rotSpeed = Math.signum(rotSpeed) * Math.min(Math.abs(rotSpeed), kTeleopMaxTurnVoltage);
 
 			double fwdSpeed = MathUtil.applyDeadband(forwardSpeed.getAsDouble(), ControllerConstants.kDeadzone);
 			fwdSpeed = Math.signum(fwdSpeed) * Math.pow(fwdSpeed, 2) * kTeleopMaxVoltage;
@@ -203,7 +217,7 @@ public class DriveSubsystem extends SubsystemBase {
 			double strSpeed = MathUtil.applyDeadband(strafeSpeed.getAsDouble(), ControllerConstants.kDeadzone);
 			strSpeed = Math.signum(strSpeed) * Math.pow(strSpeed, 2) * kTeleopMaxVoltage;
 
-			drive(fwdSpeed, strSpeed, rotSpeed, isFieldRelative.getAsBoolean());
+			drive(fwdSpeed, strSpeed, rotSpeed, !isFieldRelative.getAsBoolean());
 		}).withName("DefaultDriveCommand");
 	}
 

@@ -8,6 +8,7 @@ public class Constants {
 		public static final int kDriverControllerPort = 0;
 		public static final int kOperatorControllerPort = 1;
 		public static final double kDeadzone = 0.05;
+		public static final double kAbsoluteTurnDeadzone = 0.5;
 		public static final double kTriggerDeadzone = .05;
 	}
 
@@ -36,6 +37,7 @@ public class Constants {
 
 		public static final double kTeleopMaxVoltage = 12;
 		public static final double kTeleopMaxTurnVoltage = 7.2;
+		public static final double kTurnSpeedMultiplier = 3;
 		public static final double kGearRatio = 6.12;
 		public static final double kWheelDiameter = Units.inchesToMeters(4);
 		public static final double kWheelCircumference = Math.PI * kWheelDiameter;
