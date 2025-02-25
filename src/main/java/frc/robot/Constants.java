@@ -1,8 +1,11 @@
 package frc.robot;
 
+import static frc.robot.subsystems.PoseEstimationSubsystem.*;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -31,23 +34,24 @@ public class Constants {
 		public static final int kBackRightCANCoderPort = 22;
 		public static final int kBackLeftCANCoderPort = 32;
 
-		// Make sure these are tuned (can do with SysId)
-		// public static final double kP = 0.09;
-		public static final double kP = 0.03;
+		// TODO: Make sure these are tuned (can do with SysId)
+		public static final double kP = 0.09;
 		public static final double kI = 0.0;
-		public static final double kD = 0.1 * kP;
+		public static final double kD = 0;
 		public static final double kS = 0;
 		public static final double kV = 0.11;
 		public static final double kA = 0.009;
 
-		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
-		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+		public static final double kRotationP = 5; // TODO: tune it
+		public static final double kRotationI = 0.0;
+		public static final double kRotationD = 0.1; // TODO: tune it
+		public static final double kRotationS = 0;
+		public static final double kRotationV = 1.9;
+		public static final double kRotationA = 0.009;
 
-		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
-		public static final double kDriveMinSpeed = 0.4; // 0.4 meters per second
-		public static final double kTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
 		public static final double kDriveMaxVoltage = 12;
-
+		public static final double kTeleopMaxVoltage = 12;
+		public static final double kTeleopMaxTurnVoltage = 7.2;
 		public static final double kDriveGearRatio = 6.12;
 		public static final double kSteerGearRatio = 150.0 / 7;
 		// public static final double kWheelDiameter = Units.inchesToMeters(3.67);
@@ -68,8 +72,17 @@ public class Constants {
 		public static final int kDrivePeakCurrentLimit = kDriveSmartCurrentLimit + 15;
 		public static final int kSteerSmartCurrentLimit = 20;
 		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
+		public static final int kSteerSecondaryCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;
+
+		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
+		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+
+		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
+		public static final double kDriveMinSpeed = 0.4; // 0.4 meters per second
+		public static final double kTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+		public static final double kTurnMinAngularSpeed = Math.toRadians(1); // 1 degree per second
 
 		// DriveCommand.java Constants
 		public static final double kDriveP = 5;
@@ -80,9 +93,7 @@ public class Constants {
 		public static final double kTurnP = 10;
 		public static final double kTurnI = 0;
 		public static final double kTurnD = 0.1;
-		public static final double kTurnMaxAcceleration = 0.75 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 1.5
-																						// sec
-
+		public static final double kTurnMaxAcceleration = 2 * kTurnMaxAngularSpeed; // kTurnMaxAngularSpeed in 0.5
 	}
 
 	/**
@@ -90,21 +101,24 @@ public class Constants {
 	 */
 	public static AprilTagFieldLayout kFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025Reefscape);
 
-	public static final class RobotConstants {
+	/**
+	 * The {@code Transform3d} expressing the pose of the first camera relative to
+	 * the pose of the robot.
+	 */
+	public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.3, 0.0, 0.2),
+			new Rotation3d(0, Units.degreesToRadians(-10), 0));
 
-		/**
-		 * The {@code Transform3d} expressing the pose of the first camera relative to
-		 * the pose of the robot.
-		 */
-		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.0, 0.0, 0.2),
-				new Rotation3d(0, Units.degreesToRadians(-10), 0));
+	/**
+	 * The {@code Transform3d} expressing the pose of the second camera relative to
+	 * the pose of the robot.
+	 */
+	public static Transform3d kRobotToCamera2 = new Transform3d(new Translation3d(-0.5, -0.0, 0.2),
+			new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
 
-		/**
-		 * The {@code Transform3d} expressing the pose of the second camera relative to
-		 * the pose of the robot.
-		 */
-		public static Transform3d kRobotToCamera2 = new Transform3d(new Translation3d(-0.5, -0.0, 0.2),
-				new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
+	static Transform2d[] kRobotToTagsLeft = { transform(1.0, -0.165, 180),
+			transform(0.5, -0.165, 180) };
 
-	}
+	static Transform2d[] kRobotToTagsRight = { transform(1.0, 0.165, 180),
+			transform(0.5, 0.165, 180) };
+
 }
