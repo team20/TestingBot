@@ -10,7 +10,7 @@ import static frc.robot.Constants.ControllerConstants.*;
 import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -85,6 +85,7 @@ public class Robot extends TimedRobot {
 				Map.of(
 						11, "FR Turn", 21, "BR Turn", 31, "BL Turn", 41, "FL Turn"));
 		DriverStation.startDataLog(DataLogManager.getLog());
+		addTestingCommands();
 		addProgrammingCommands();
 		bindDriveControls();
 		SmartDashboard.putData("Testing Chooser", m_testingChooser);
@@ -92,14 +93,15 @@ public class Robot extends TimedRobot {
 				.onTrue(Commands.deferredProxy(m_testingChooser::getSelected));
 	}
 
-	public void addProgrammingCommands() {
+	public void addTestingCommands() {
 		m_testingChooser
-				.addOption("SysId Drive Quasistatic Forward", m_driveSubsystem.sysidQuasistatic(Direction.kForward));
+				.addOption(
+						"Check Subsystems in Pitt",
+						parallel(m_driveSubsystem.testCommand(0.5, Math.toRadians(45), 1.0)));
 		m_testingChooser
-				.addOption("SysId Drive Quasistatic Reverse", m_driveSubsystem.sysidQuasistatic(Direction.kReverse));
-		m_testingChooser.addOption("SysId Drive Dynamic Forward", m_driveSubsystem.sysidDynamic(Direction.kForward));
-		m_testingChooser.addOption("SysId Drive Dynamic Reverse", m_driveSubsystem.sysidDynamic(Direction.kReverse));
-
+				.addOption(
+						"Check DriveSubsystem (F/B/L/R/LR/RR and F/B while rotating)",
+						m_driveSubsystem.testCommand(0.5, Math.toRadians(45), 1.0));
 		double distanceTolerance = 0.01;
 		double angleToleranceInDegrees = 1;
 		double intermediateDistanceTolerance = 0.08;
@@ -114,37 +116,26 @@ public class Robot extends TimedRobot {
 						"Quickly Align to AprilTags 12, 13, 17, 18, and 19",
 						CommandComposer.alignToTags(
 								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
-								intermediateAngleToleranceInDegrees,
-								List.of(transform(1.5, 0, 180), transform(1.0, 0, 180), transform(.8, 0, 180)),
-								transform(1.5, 0, 180), 18, 17, 12, 17, 18, 19, 13, 19, 18));
+								intermediateAngleToleranceInDegrees, Arrays.asList(kRobotToTags), kRobotToTags[0], 18,
+								17, 12, 17, 18, 19, 13, 19, 18));
 		m_testingChooser
 				.addOption(
 						"Quickly Align AprilTags 17, 18, 19, 20, 21, and 22",
 						CommandComposer.alignToTags(
 								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
-								intermediateAngleToleranceInDegrees,
-								List.of(
-										transform(1.5, 0.33 / 2, 180), transform(1.0, 0.33 / 2, 180),
-										transform(.8, 0.33 / 2, 180)),
-								transform(1.5, 0.33 / 2, 180),
-								17, 18, 19, 20, 21, 22, 17));
+								intermediateAngleToleranceInDegrees, Arrays.asList(kRobotToTagsLeft),
+								kRobotToTagsLeft[0], 17, 18, 19, 20, 21, 22, 17));
 		m_testingChooser
 				.addOption(
 						"Quickly Align to AprilTags 1, 2, 6, 7, and 8",
 						CommandComposer.alignToTags(
 								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
-								intermediateAngleToleranceInDegrees,
-								List.of(transform(1.5, 0, 180), transform(1.0, 0, 180), transform(.5, 0, 180)),
-								transform(1.5, 0, 180), 7, 6, 1,
-								6, 7, 8, 2, 8, 7));
+								intermediateAngleToleranceInDegrees, Arrays.asList(kRobotToTags), kRobotToTags[0], 7, 6,
+								1, 6, 7, 8, 2, 8, 7));
 		m_testingChooser
 				.addOption(
 						"Check kDriveGearRatio and kWheelDiameter (F/B 6 feet)",
 						CommandComposer.moveForwardBackward(6, distanceTolerance, angleToleranceInDegrees));
-		m_testingChooser
-				.addOption(
-						"Check DriveSubsystem (F/B/L/R/LR/RR and F/B while rotating)",
-						m_driveSubsystem.testCommand(0.5, Math.toRadians(45), 1.0));
 		m_testingChooser
 				.addOption(
 						"Slowest Movement Test (F/B/L/R/LR/RR and F/B while rotating)",
@@ -167,6 +158,15 @@ public class Robot extends TimedRobot {
 													return pose(pose.getX(), pose.getY(), 120 * i);
 												}))
 										.toList()));
+	}
+
+	public void addProgrammingCommands() {
+		m_testingChooser
+				.addOption("SysId Drive Quasistatic Forward", m_driveSubsystem.sysidQuasistatic(Direction.kForward));
+		m_testingChooser
+				.addOption("SysId Drive Quasistatic Reverse", m_driveSubsystem.sysidQuasistatic(Direction.kReverse));
+		m_testingChooser.addOption("SysId Drive Dynamic Forward", m_driveSubsystem.sysidDynamic(Direction.kForward));
+		m_testingChooser.addOption("SysId Drive Dynamic Reverse", m_driveSubsystem.sysidDynamic(Direction.kReverse));
 	}
 
 	public void bindDriveControls() {
