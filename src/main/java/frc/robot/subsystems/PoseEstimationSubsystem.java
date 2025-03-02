@@ -35,11 +35,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class PoseEstimationSubsystem extends SubsystemBase {
 	private final Map<PhotonCamera, PhotonPoseEstimator> m_cameras = new HashMap<PhotonCamera, PhotonPoseEstimator>();
 	private final DriveSubsystem m_driveSubsystem;
+	private final StructPublisher<Pose2d> m_detectedPosePublisher;
+	private final StructPublisher<Pose2d> m_estimatedPosePublisher;
 
 	/**
 	 * Standard deviations of the vision pose measurement (x position in meters, y
 	 * position in meters, and heading in radians). Smaller values will cause
-	 * the Kalman filter to trust the Vision data more.
+	 * the Kalmanfilter to trust the Vision data more.
 	 */
 	private static final Vector<N3> visionMeasurementStdDevs = VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(10));
 
@@ -50,14 +52,11 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 */
 	private final SwerveDrivePoseEstimator m_poseEstimator;
 
-	private final StructPublisher<Pose2d> m_detectedPosePublisher;
-	private final StructPublisher<Pose2d> m_estimatedPosePublisher;
-
 	/**
 	 * Constructs a {@code PoseEstimationSubsystem}.
 	 * 
 	 * @param driveSubsystem {@code DriveSubsystem} to be used by the
-	 *        {@code PoseEstimationSubsystem}
+	 *                       {@code PoseEstimationSubsystem}
 	 */
 	public PoseEstimationSubsystem(DriveSubsystem driveSubsystem) {
 		m_driveSubsystem = driveSubsystem;
@@ -80,9 +79,9 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * Adds the specified {@code PhotonCamera} to this
 	 * {@code PoseEstimationSubsystem}.
 	 * 
-	 * @param cameraSim a {@code PhotonCamera}
+	 * @param cameraSim     a {@code PhotonCamera}
 	 * @param robotToCamera the {@code Transform3d} expressing the pose of the
-	 *        camera relative to the pose of the robot.
+	 *                      camera relative to the pose of the robot.
 	 * @return this {@code PoseEstimationSubsystem}
 	 */
 	public PoseEstimationSubsystem addCamera(PhotonCamera camera, Transform3d robotToCamera) {
@@ -147,12 +146,13 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * Finds the pose of the {@code AprilTag} that is closest to the robot, either
 	 * in terms of distance or angle (based on user selection).
 	 * 
-	 * @param angleOfCoverage the angular coverage (in degrees) within
-	 *        which AprilTags are considered (maximum: 180)
+	 * @param angleOfCoverage           the angular coverage (in degrees) within
+	 *                                  which AprilTags are considered (maximum:
+	 *                                  180)
 	 * @param distanceThresholdInMeters the maximum distance (in meters) within
-	 *        which AprilTags are considered
-	 * @param isClosestByDistance true for distance-based tag filtering.
-	 *        false for angle-based tag filtering.
+	 *                                  which AprilTags are considered
+	 * @param isClosestByDistance       true for distance-based tag filtering.
+	 *                                  false for angle-based tag filtering.
 	 * @return the {@code Pose2d} of the {@code AprilTag} closest to the robot.
 	 *         Returns null if there is no such AprilTag.
 	 * @apiNote Use Optional.empty() for Optional<Double> parameters if you don't
@@ -160,10 +160,10 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * @apiNote Robot rotation angle wrapped from -180 to 180, as said in
 	 *          {@link #angularDisplacement(Pose2d, Pose2d)}.
 	 */
-	public Pose2d closestTagPose(Optional<Double> angleOfCoverage, Optional<Double> distanceThresholdInMeters,
+	public Optional<Pose2d> closestTagPose(Optional<Double> angleOfCoverage, Optional<Double> distanceThresholdInMeters,
 			boolean isClosestByDistance) {
 		var id = closestTagID(getEstimatedPose(), distanceThresholdInMeters, angleOfCoverage, isClosestByDistance);
-		return id == null ? null : kFieldLayout.getTagPose(id).get().toPose2d();
+		return id.isEmpty() ? Optional.empty() : Optional.of(kFieldLayout.getTagPose(id.get()).get().toPose2d());
 	}
 
 	/**
@@ -171,19 +171,19 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * the specified {@code Pose2d} in terms of distance.
 	 * Returns null if no such AprilTag.
 	 * 
-	 * @param pose a Pose2d
-	 * @param angleOfCoverage the angular coverage (in degrees) within
-	 *        which AprilTags are considered (maximum: 180)
-	 * @param distanceThreshold the maximum distance (in meters) within
-	 *        which AprilTags are considered
+	 * @param pose                a Pose2d
+	 * @param angleOfCoverage     the angular coverage (in degrees) within
+	 *                            which AprilTags are considered (maximum: 180)
+	 * @param distanceThreshold   the maximum distance (in meters) within
+	 *                            which AprilTags are considered
 	 * @param isClosestByDistance true for distance-based tag filtering.
-	 *        false for angle-based tag filtering.
+	 *                            false for angle-based tag filtering.
 	 * @return the ID of the closest AprilTag
 	 * @apiNote Use Optional.empty() for Optional<Double> parameters if you don't
 	 *          want to input a specific value.
 	 * @apiNote Remember to handle potential null return from this method.
 	 */
-	public static Integer closestTagID(Pose2d pose, Optional<Double> distanceThreshold,
+	public static Optional<Integer> closestTagID(Pose2d pose, Optional<Double> distanceThreshold,
 			Optional<Double> angleOfCoverage, boolean isClosestByDistance) {
 		// Filter to only see tags within specified angle of coverage, both CW and CCW.
 		// e.g. Default is 90 degrees CW & CCW (180 degrees total, in front of the bot).
@@ -205,13 +205,14 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 				.reduce((tag1, tag2) -> tag1.getValue() < tag2.getValue() ? tag1 : tag2);
 		// Return tag ID if present.
 		if (closest.isPresent()) {
-			return closest.get().getKey();
-		} else
-			return null;
+			return Optional.of(closest.get().getKey());
+		} else {
+			return Optional.empty();
+		}
 	}
 
 	/**
-	 * Calculates the smallest displacement from the
+	 * Calculates the distance/hypotenuse of the translation from the
 	 * initial {@code Pose2d} to the last {@code Pose2d}.
 	 * Returns a positive value for in front of initial pose
 	 * and a negative value for behind initial pose.
@@ -228,8 +229,8 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	}
 
 	/**
-	 * Calculates the angular displacement from the initial {@code Pose2d} to
-	 * the last {@code Pose2d}.
+	 * Calculates the angle from the orientation of the initial {@code Pose2d} to
+	 * the orientation of the {@code Translation2d} between the initial pose and the last pose.
 	 * Returns a value wrapped from -180 to 180 (CW negative, CCW positive).
 	 * 
 	 * @param initial the initial {@code Pose2d}
@@ -256,8 +257,8 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	/**
 	 * Constructs a {@code Pose2d}.
 	 * 
-	 * @param x the x component of the {@code Pose2d}
-	 * @param y the y component of the {@code Pose2d}
+	 * @param x            the x component of the {@code Pose2d}
+	 * @param y            the y component of the {@code Pose2d}
 	 * @param yawInDegrees the rotational component of the {@code Pose2d} in degrees
 	 * @return the constructed {@code Pose2d}
 	 */
@@ -268,10 +269,10 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	/**
 	 * Constructs a {@code Transform2d}.
 	 * 
-	 * @param x the x component of the {@code Transform2d}
-	 * @param y the y component of the {@code Transform2d}
+	 * @param x            the x component of the {@code Transform2d}
+	 * @param y            the y component of the {@code Transform2d}
 	 * @param yawInDegrees the rotational component of the {@code Transform2d} in
-	 *        degrees
+	 *                     degrees
 	 * @return the constructed {@code Transform2d}
 	 */
 	public static Transform2d transform(double x, double y, double yawInDegrees) {
@@ -282,7 +283,7 @@ public class PoseEstimationSubsystem extends SubsystemBase {
 	 * Constructs a {@code Rotation2d}.
 	 * 
 	 * @param angleInDegrees the angle of the {@code Rotation2d} in
-	 *        degrees
+	 *                       degrees
 	 * @return the constructed {@code Rotation2d}
 	 */
 	public static Rotation2d rotation(double angleInDegrees) {

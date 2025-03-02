@@ -148,5 +148,10 @@ public class Constants {
 		public static Transform3d kRobotToCamera2 = new Transform3d(new Translation3d(-0.5, -0.0, 0.2),
 				new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
 
+		// TODO: Tune?
+		public static double kSimAvgError = 0.45;
+		public static double kSimStdDevError = 0.08;
+		public static double kAvgLatencyMs = 35;
+		public static double kLatencyStdDevMs = 5;
 	}
 }
