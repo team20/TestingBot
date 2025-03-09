@@ -5,7 +5,7 @@
 package frc.robot;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
-import static frc.robot.Constants.*;
+import static frc.robot.Constants.AutoAlignConstants.*;
 import static frc.robot.Constants.ControllerConstants.*;
 import static frc.robot.Constants.DriveConstants.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
@@ -43,13 +43,17 @@ import frc.robot.subsystems.PoseEstimationSubsystem;
 
 public class Robot extends TimedRobot {
 	private Command m_autonomousCommand;
+	private final SendableChooser<Command> m_autoSelector = new SendableChooser<Command>();
+
 	private final SendableChooser<Command> m_testingChooser = new SendableChooser<>();
 	private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
 	private final CommandPS5Controller m_driverController = new CommandPS5Controller(kDriverControllerPort);
 	private final CommandPS5Controller m_operatorController = new CommandPS5Controller(kOperatorControllerPort);
 	private final PowerDistribution m_pdh = new PowerDistribution();
-	private final VisionSimulator m_visionSimulator = new VisionSimulator(m_driveSubsystem,
-			pose(kFieldLayout.getFieldLength() / 2 + 2.5, 1.91 + .3, 180), 0.01);
+	private final VisionSimulator m_visionSimulator = RobotBase.isReal() ? null
+			: new VisionSimulator(m_driveSubsystem,
+					pose(kFieldLayout.getFieldLength() / 2, kFieldLayout.getFieldWidth() / 2, 0),
+					0.05); // movement overestimation by 5%
 	SimCameraProperties cameraProp = new SimCameraProperties() {
 		{
 			setCalibration(640, 480, Rotation2d.fromDegrees(100));
@@ -85,15 +89,37 @@ public class Robot extends TimedRobot {
 				Map.of(
 						11, "FR Turn", 21, "BR Turn", 31, "BL Turn", 41, "FL Turn"));
 		DriverStation.startDataLog(DataLogManager.getLog());
+		addAutoCommands();
 		addTestingCommands();
 		addProgrammingCommands();
 		bindDriveControls();
+		SmartDashboard.putData("Auto Selector", m_autoSelector);
 		SmartDashboard.putData("Testing Chooser", m_testingChooser);
 		m_driverController.options().and(m_driverController.create()).and(() -> !DriverStation.isFMSAttached())
 				.onTrue(Commands.deferredProxy(m_testingChooser::getSelected));
 	}
 
+	public void addAutoCommands() {
+		m_autoSelector
+				.addOption(
+						"3 Score North", CommandComposer.get3ScoreNorth());
+		m_autoSelector
+				.addOption(
+						"3 Score South", CommandComposer.get3ScoreSouth());
+	}
+
 	public void addTestingCommands() {
+		double distanceTolerance = 0.01;
+		double angleToleranceInDegrees = 1;
+		double intermediateDistanceTolerance = 0.08;
+		double intermediateAngleToleranceInDegrees = 8.0;
+		m_testingChooser
+				.addOption(
+						"Quickly Align to AprilTags 22, 12, 17, 12, 17",
+						CommandComposer.alignToTags(
+								distanceTolerance, angleToleranceInDegrees, intermediateDistanceTolerance,
+								intermediateAngleToleranceInDegrees, Arrays.asList(kRobotToTags), kRobotToTags[0], 22,
+								12, 17, 12, 17));
 		m_testingChooser
 				.addOption(
 						"Check Subsystems in Pitt",
@@ -102,10 +128,6 @@ public class Robot extends TimedRobot {
 				.addOption(
 						"Check DriveSubsystem (F/B/L/R/LR/RR and F/B while rotating)",
 						m_driveSubsystem.testCommand(0.5, Math.toRadians(45), 1.0));
-		double distanceTolerance = 0.01;
-		double angleToleranceInDegrees = 1;
-		double intermediateDistanceTolerance = 0.08;
-		double intermediateAngleToleranceInDegrees = 8.0;
 		m_testingChooser
 				.addOption(
 						"Check PID Constants for Driving (5'x5' Square)",
@@ -225,8 +247,7 @@ public class Robot extends TimedRobot {
 
 	@Override
 	public void autonomousInit() {
-		m_autonomousCommand = null;
-
+		m_autonomousCommand = m_autoSelector.getSelected();
 		if (m_autonomousCommand != null) {
 			m_autonomousCommand.schedule();
 		}
@@ -291,4 +312,35 @@ public class Robot extends TimedRobot {
 		return camera;
 	}
 
+	@Override
+	public void simulationInit() {
+		repositionSimulatedRobot(DriverStation.Alliance.Red, 2);
+	}
+
+	/**
+	 * Repositions the robot in simulation according to the alliance station.
+	 */
+	void repositionSimulatedRobot() {
+		var alliance = DriverStation.getAlliance();
+		if (alliance.isPresent())
+			repositionSimulatedRobot(alliance.get(), DriverStation.getLocation().getAsInt());
+	}
+
+	/**
+	 * Repositions the robot in simulation according to the specified alliance
+	 * station.
+	 * 
+	 * @param alliance the {@code Alliance}
+	 * @param location the location of the team's driver station
+	 */
+	void repositionSimulatedRobot(DriverStation.Alliance alliance, int location) {
+		var redAlliance = alliance == DriverStation.Alliance.Red;
+		Map<Integer, Double> yCoordinates = Map.of(
+				1, kFieldLayout.getFieldWidth() * 3 / 4, 2, kFieldLayout.getFieldWidth() * 2 / 4, 3,
+				kFieldLayout.getFieldWidth() * 1 / 4);
+		m_visionSimulator.setRobotPose(
+				pose(
+						kFieldLayout.getFieldLength() / 2 + 2 * (redAlliance ? 1 : -1),
+						yCoordinates.get(location), redAlliance ? 0 : 180));
+	}
 }
