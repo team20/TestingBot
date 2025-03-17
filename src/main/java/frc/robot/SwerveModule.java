@@ -166,8 +166,6 @@ public class SwerveModule {
 	public void setModuleState(SwerveModuleState state) {
 		m_driveMotor.setVoltage(state.speedMetersPerSecond);
 		setAngle(state.angle.getDegrees());
-		if (RobotBase.isSimulation())
-			update();
 	}
 
 	/**
