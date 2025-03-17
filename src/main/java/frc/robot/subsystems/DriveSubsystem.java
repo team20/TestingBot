@@ -8,9 +8,11 @@ import static edu.wpi.first.units.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.Constants.DriveConstants.*;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
@@ -37,7 +39,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.SwerveModule;
-import frc.robot.SwerveModuleSimulator;
 
 public class DriveSubsystem extends SubsystemBase {
 	private final SwerveModule m_frontLeft;
@@ -60,6 +61,7 @@ public class DriveSubsystem extends SubsystemBase {
 	private final StructPublisher<Rotation2d> m_targetHeadingPublisher;
 
 	private final PIDController m_orientationController = new PIDController(kRotationP, kRotationI, kRotationD);
+	private AtomicBoolean shouldBeCoast = new AtomicBoolean(true);
 
 	/** Creates a new DriveSubsystem. */
 	public DriveSubsystem() {
@@ -78,18 +80,10 @@ public class DriveSubsystem extends SubsystemBase {
 		m_targetHeadingPublisher = NetworkTableInstance.getDefault()
 				.getStructTopic("/SmartDashboard/Target Heading", Rotation2d.struct)
 				.publish();
-		if (RobotBase.isSimulation()) {
-			m_frontLeft = new SwerveModuleSimulator(kFrontLeftCANCoderPort, kFrontLeftDrivePort, kFrontLeftSteerPort);
-			m_frontRight = new SwerveModuleSimulator(kFrontRightCANCoderPort, kFrontRightDrivePort,
-					kFrontRightSteerPort);
-			m_backLeft = new SwerveModuleSimulator(kBackLeftCANCoderPort, kBackLeftDrivePort, kBackLeftSteerPort);
-			m_backRight = new SwerveModuleSimulator(kBackRightCANCoderPort, kBackRightDrivePort, kBackRightSteerPort);
-		} else {
-			m_frontLeft = new SwerveModule(kFrontLeftCANCoderPort, kFrontLeftDrivePort, kFrontLeftSteerPort);
-			m_frontRight = new SwerveModule(kFrontRightCANCoderPort, kFrontRightDrivePort, kFrontRightSteerPort);
-			m_backLeft = new SwerveModule(kBackLeftCANCoderPort, kBackLeftDrivePort, kBackLeftSteerPort);
-			m_backRight = new SwerveModule(kBackRightCANCoderPort, kBackRightDrivePort, kBackRightSteerPort);
-		}
+		m_frontLeft = new SwerveModule(kFrontLeftCANCoderPort, kFrontLeftDrivePort, kFrontLeftSteerPort);
+		m_frontRight = new SwerveModule(kFrontRightCANCoderPort, kFrontRightDrivePort, kFrontRightSteerPort);
+		m_backLeft = new SwerveModule(kBackLeftCANCoderPort, kBackLeftDrivePort, kBackLeftSteerPort);
+		m_backRight = new SwerveModule(kBackRightCANCoderPort, kBackRightDrivePort, kBackRightSteerPort);
 		// Adjust ramp rate, step voltage, and timeout to make sure robot doesn't
 		// collide with anything
 		var config = new SysIdRoutine.Config(Volts.of(2.5).div(Seconds.of(1)), null, Seconds.of(3));
@@ -174,6 +168,7 @@ public class DriveSubsystem extends SubsystemBase {
 	private SwerveModuleState[] calculateModuleStates(ChassisSpeeds speeds, boolean isFieldRelative) {
 		if (isFieldRelative)
 			speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getHeading());
+		speeds = ChassisSpeeds.discretize(speeds, 0.03);
 		SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(speeds);
 		SwerveDriveKinematics.desaturateWheelSpeeds(states, kTeleopDriveMaxSpeed);
 		double[] moduleAngles = { m_frontLeft.getModuleAngle(), m_frontRight.getModuleAngle(),
@@ -224,6 +219,16 @@ public class DriveSubsystem extends SubsystemBase {
 		setModuleStates(calculateModuleStates(chassisSpeeds, isFieldRelative));
 	}
 
+	public void setDriveMotorNeutralMode(NeutralModeValue mode) {
+		// If we just set the motors to brake, when toggling, it should then switch to
+		// coast
+		shouldBeCoast.set(mode == NeutralModeValue.Brake);
+		// m_frontLeft.setNeutralMode(mode);
+		// m_frontRight.setNeutralMode(mode);
+		// m_backLeft.setNeutralMode(mode);
+		// m_backRight.setNeutralMode(mode);
+	}
+
 	/**
 	 * Is invoked periodically by the {@link CommandScheduler}. Useful
 	 * for updating subsystem-specific state.
@@ -235,9 +240,26 @@ public class DriveSubsystem extends SubsystemBase {
 		m_currentModuleStatePublisher.set(states);
 		var speeds = m_kinematics.toChassisSpeeds(states);
 		m_currentChassisSpeedsPublisher.set(speeds);
-		if (RobotBase.isSimulation())// TODO: Use SysId to get feedforward model for rotation
+		if (RobotBase.isSimulation())
 			m_gyroSim.set(-Math.toDegrees(speeds.omegaRadiansPerSecond * TimedRobot.kDefaultPeriod) + m_gyro.getYaw());
 		m_posePublisher.set(m_odometry.update(getHeading(), getModulePositions()));
+	}
+
+	public Command toggleCoastMode() {
+		return runOnce(() -> {
+			NeutralModeValue mode;
+			if (shouldBeCoast.get()) {
+				mode = NeutralModeValue.Coast;
+			} else {
+				mode = NeutralModeValue.Brake;
+			}
+			shouldBeCoast.set(!shouldBeCoast.get());
+			setDriveMotorNeutralMode(mode);
+		}).withName("Drive Toggle Coast Mode");
+	}
+
+	public Command setNeutralMode(NeutralModeValue mode) {
+		return runOnce(() -> setDriveMotorNeutralMode(mode)).withName("Drive Enable Coast Mode");
 	}
 
 	/**
@@ -251,15 +273,18 @@ public class DriveSubsystem extends SubsystemBase {
 	 *        the robot face forward (+X direction).
 	 * @param strafeOrientation Strafe orientation supplier. Positive values make
 	 *        the robot face left (+Y direction).
+	 * @param rotation Rotation supplier. Positive values make
+	 *        the robot rotate left (CCW direction).
 	 * @param isRobotRelative Supplier for determining if driving should be robot
 	 *        relative.
 	 * @return A command to drive the robot.
 	 */
 	public Command driveCommand(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier forwardOrientation, DoubleSupplier strafeOrientation, BooleanSupplier isRobotRelative) {
+			DoubleSupplier forwardOrientation, DoubleSupplier strafeOrientation, DoubleSupplier rotation,
+			BooleanSupplier isRobotRelative) {
 		return run(
 				() -> drive(
-						chassisSpeeds(forwardSpeed, strafeSpeed, forwardOrientation, strafeOrientation),
+						chassisSpeeds(forwardSpeed, strafeSpeed, forwardOrientation, strafeOrientation, rotation),
 						!isRobotRelative.getAsBoolean())).withName("DefaultDriveCommand");
 	}
 
@@ -297,12 +322,14 @@ public class DriveSubsystem extends SubsystemBase {
 	 *         input
 	 */
 	public ChassisSpeeds chassisSpeeds(DoubleSupplier forwardSpeed, DoubleSupplier strafeSpeed,
-			DoubleSupplier forwardOrientation, DoubleSupplier strafeOrientation) {
+			DoubleSupplier forwardOrientation, DoubleSupplier strafeOrientation, DoubleSupplier rotation) {
 		var orientation = new Translation2d(forwardOrientation.getAsDouble(), strafeOrientation.getAsDouble());
-		double omegaRadiansPerSecond = 0;
+		double omegaRadiansPerSecond = MathUtil.applyDeadband(rotation.getAsDouble(), ControllerConstants.kDeadzone);
+		omegaRadiansPerSecond = Math.signum(omegaRadiansPerSecond) * Math.pow(omegaRadiansPerSecond, 2)
+				* kTeleopTurnMaxAngularSpeed;
 		if (orientation.getNorm() > 0.05) {
 			var angle = orientation.getAngle();
-			omegaRadiansPerSecond = m_orientationController
+			omegaRadiansPerSecond += m_orientationController
 					.calculate(getHeading().getRadians(), angle.getRadians());
 			m_targetHeadingPublisher.set(angle);
 		}
@@ -378,6 +405,12 @@ public class DriveSubsystem extends SubsystemBase {
 		return runOnce(m_gyro::zeroYaw).withName("ResetHeadingCommand");
 	}
 
+	/**
+	 * Resets the odometry of this {@code DriveSubsystem}.
+	 * 
+	 * @param pose the {@code Pose2d} to which the odometry to set to
+	 * @return a {@code Command} to the odometry of this {@code DriveSubsystem}
+	 */
 	public Command resetOdometry(Pose2d pose) {
 		return runOnce(() -> m_odometry.resetPosition(getHeading(), getModulePositions(), pose))
 				.withName("ResetOdometryCommand");
@@ -416,6 +449,7 @@ public class DriveSubsystem extends SubsystemBase {
 	 */
 	public Command testCommand(double speed, double rotionalSpeed, double duration) {
 		return sequence(
+				resetOdometry(Pose2d.kZero),
 				run(() -> drive(speed, 0, 0, false)).withTimeout(duration),
 				run(() -> drive(-speed, 0, 0, false)).withTimeout(duration),
 				run(() -> drive(0, speed, 0, false)).withTimeout(duration),

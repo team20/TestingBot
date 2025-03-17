@@ -1,8 +1,12 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.PoseEstimationSubsystem.*;
 
 import java.util.Map;
+
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -12,8 +16,52 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Distance;
 
 public class Constants {
+	public static final class AlgaeConstants {
+		public static final int kFlywheelMotorPort = 23;
+		public static final int kGrabberAnglePort = 24;
+		public static final boolean kFlywheelInvert = false;
+		public static final boolean kGrabberAngleInvert = false;
+
+		public static final int kSmartCurrentLimit = 15;
+		public static final double kSecondaryCurrentLimit = 20;
+		public static final double kTimeOverCurrentToStop = .1;
+
+		public static final double kDeployGrabberPosition = .75;
+		public static final double kFlywheelSpeed = .8;
+
+		public static final double kP = 0.7;
+		public static final double kI = 0.0;
+		public static final double kD = 0;
+
+		public static final double kAlgaePivotForwardSoftLimit = 0;
+		public static final double kAlgaePivotReverseSoftLimit = 0;
+	}
+
+	public static final class CheeseStickConstants {
+		public static final int kServoPort = 0;
+		public static final double kReleaseDistance = 0.4;
+		/**
+		 * Set this value to how far the cheese stick wheels extend beyond the lexan.
+		 */
+		public static final Distance kExtensionLength = Inch.of(.5);
+	}
+
+	public static final class ClimberConstants {
+		public static final int kClimberMotorPort = 25;
+		public static final double kClimberForwardSoftLimit = .5;
+		public static final double kClimberReverseSoftLimit = 0;
+		public static final double kSpeed = 0.75;
+		public static final double kP = 0.75;
+		public static final double kI = 0;
+		public static final double kD = 0;
+		public static final double kTolerance = 1;
+		public static final int kSmartCurrentLimit = 50;
+		public static final int kSecondaryCurrentLimit = kSmartCurrentLimit + 15;
+	}
+
 	public static final class ControllerConstants {
 		public static final int kDriverControllerPort = 0;
 		public static final int kOperatorControllerPort = 1;
@@ -37,11 +85,11 @@ public class Constants {
 		public static final int kBackLeftCANCoderPort = 32;
 
 		// TODO: Make sure these are tuned (can do with SysId)
-		public static final double kP = 0.04;
+		public static final double kP = 0.09; // TODO: tune it probably to 0.04
 		public static final double kI = 0.0;
-		public static final double kD = 0;
+		public static final double kD = 0.001;
 		public static final double kS = 0;
-		public static final double kV = 0.11;
+		public static final double kV = 0.12;
 		public static final double kA = 0.009;
 
 		public static final double kRotationP = 5; // TODO: tune it
@@ -72,25 +120,35 @@ public class Constants {
 		public static final int kEncoderMeasurementPeriod = 16;
 		public static final int kDriveSmartCurrentLimit = 20;
 		public static final int kDrivePeakCurrentLimit = kDriveSmartCurrentLimit + 15;
-		public static final int kSteerSmartCurrentLimit = 20;
-		public static final int kSteerPeakCurrentLimit = kSteerSmartCurrentLimit + 15;
+		public static final int kSteerSmartCurrentLimit = 60;
 		public static final int kSteerSecondaryCurrentLimit = kSteerSmartCurrentLimit + 15;
 		// The amount of time to go from 0 to full power in seconds
 		public static final double kRampRate = .1;
+		public static final TalonFXConfiguration kDriveConfig = new TalonFXConfiguration();
+		static {
+			kDriveConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+			kDriveConfig.CurrentLimits.SupplyCurrentLimit = 45; // For avoiding brownout
+			kDriveConfig.CurrentLimits.SupplyCurrentLowerLimit = 45;
+			kDriveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+			kDriveConfig.CurrentLimits.StatorCurrentLimit = 80; // Output current (proportional to acceleration)
+			kDriveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
+			kDriveConfig.ClosedLoopRamps.VoltageClosedLoopRampPeriod = kRampRate;
+			kDriveConfig.OpenLoopRamps.VoltageOpenLoopRampPeriod = kRampRate;
+		}
 
-		public static final double kTeleopDriveMaxSpeed = 5.0; // 5 meters per second
-		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+		public static final double kTeleopDriveMaxSpeed = 12.0; // 12 meters per second
+		public static final double kTeleopTurnMaxAngularSpeed = Math.toRadians(360 * 5);// 5 rotations per second
 
-		public static final double kDriveMaxSpeed = 5.0; // 5 meters per second
-		public static final double kDriveMinSpeed = 0.2; // 0.2 meters per second
-		public static final double kTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second
+		public static final double kDriveMaxSpeed = 12.0; // 12 meters per second TODO: Optimize
+		public static final double kDriveMinSpeed = 0.2; // 0.2 meters per second TODO: Optimize
+		public static final double kTurnMaxAngularSpeed = Math.toRadians(360); // 1 rotation per second TODO: Optimize
 		public static final double kTurnMinAngularSpeed = Math.toRadians(0); // 0 degree per second
 
 		// DriveCommand.java Constants
 		public static final double kDriveP = 5;
 		public static final double kDriveI = 0;
 		public static final double kDriveD = 0;
-		public static final double kDriveMaxAcceleration = 0.75 * kDriveMaxSpeed; // kDriveMaxSpeed in 1.5 sec
+		public static final double kDriveMaxAcceleration = 2 * kDriveMaxSpeed; // kDriveMaxSpeed in 0.5 sec
 
 		public static final double kTurnP = 5;
 		public static final double kTurnI = 0;
@@ -100,17 +158,16 @@ public class Constants {
 
 	public static final class ElevatorConstants {
 		public static final int kElevatorMotorPort = 26;
-		public static final int kSmartCurrentLimit = 60; // TODO: 45
+		public static final int kSmartCurrentLimit = 60;
 		public static final int kSecondaryCurrentLimit = 70;
 		public static final double kP = 6.0; // 1.1
 		public static final double kI = 0;
 		public static final double kD = 0;
 		public static final double kS = 0.05631;
-		public static final double kG = 0.43; // 0.22876
+		public static final double kG = 0.43;
 		public static final double kV = 5.3794;
 		public static final double kA = 0.74041;
 		public static final double kGearRatio = 10;
-
 		/**
 		 * 24 teeth, 5 mm pitch, one rotation moves 120 mm, 2 stage cascading elevator
 		 * means total height change is 240 mm.
@@ -123,51 +180,44 @@ public class Constants {
 		 *               kGearRatio motor rots    1 pulley rotation
 		 * </pre>
 		 */
-		public static final double kMetersPerMotorRotation = (1 / kGearRatio)
-				* kMetersPerPulleyRotation;
+		public static final double kMetersPerMotorRotation = (1 / kGearRatio) * kMetersPerPulleyRotation;
 		public static final double kMaxVelocity = 2.75;
-		public static final double kMaxAccel = 2.5; // 2.5
-		// public static final double kTolerance = 1;
+		public static final double kMaxAccel = 2.5;
 		public static final double kTolerance = 0.01;
-		// TODO: During testing make sure these are right
 		public static final double kLevelOneHeight = Units.inchesToMeters(3);
-		public static final double kLevelTwoHeight = Units.inchesToMeters(8); // TODO: 31.88 from carpet
-		public static final double kLevelThreeHeight = Units.inchesToMeters(29); // TODO: 47.63 from carpet (5.5 off?)
-		// TODO: does this uhh do anything...? since the max height is supposedly lower?
-		// public static final double kLevelFourHeight = Units.inchesToMeters(50);
-		public static final double kLevelFourHeight = Units.inchesToMeters(48 + 0.75 + 0.5); // TODO: 72 from carpet
-		public static final double kMaxExtension = Units.inchesToMeters(49.5 + 0.75); // TODO: Likely needs to be upped:
-		// safety
+		public static final double kLevelTwoHeight = Units.inchesToMeters(8);
+		public static final double kLevelThreeHeight = Units.inchesToMeters(29);
+		public static final double kLevelFourHeight = Units.inchesToMeters(48 + 2);
+		public static final double kMaxExtension = Units.inchesToMeters(49.5 + 0.75);
 		// TODO: The amount that the elevator decreases in order to score
-		public static final double kClearanceHeight = Units.inchesToMeters(3.5);
+		public static final double kClearanceHeight = Units.inchesToMeters(5.5);
 		public static final double kToScoreHeightDecrease = Units.inchesToMeters(0);
-		public static final double kCoralStationHeight = Units.inchesToMeters(17 + 2); // TODO: Change
+		public static final double kCoralStationHeight = Units.inchesToMeters(17 + 2);
 
 		public static final double kAlgaeLevelThreeHeight = Units.inchesToMeters(0.25);
-		public static final double kAlgaeLevelTwoHeight = Units.inchesToMeters(16);
+		public static final double kAlgaeLevelTwoHeight = Units.inchesToMeters(14);
+		// public static final double kAlgaeLevelTwoAutoHeight =
+		// Units.inchesToMeters(13.5);
 	}
 
 	public static final class WristConstants {
 		public static final int kWristMotorPort = 27;
 		public static final int kSmartCurrentLimit = 20;
 		public static final int kSecondaryCurrentLimit = 20;
-		public static final int kGrabberAngleLevelFour = 223;
-		public static final int kGrabberAngleOthers = 221; // 5 degrees steeper from previous value (215)
-		public static final int kGrabberAngleLevelThree = 235;
+		public static final int kGrabberAngleLevelFour = 223; // 228 with wrist offset
+		public static final int kGrabberAngleOthers = 221;
+		public static final int kGrabberAngleLevelThree = 240; // 232 with wrist offset
 		public static final double kAlgaeWristHeight = 170;
 
 		public static final double kWristForwardSoftLimit = 274; // Wrist facing down
 		public static final double kWristReverseSoftLimit = 90; // Wrist facing up
-		public static final double kWristOffset = 0.75;
+		public static final double kWristOffset = 0.75 + (3.5 / 360.0); // angle offset
 
-		// TODO: Make sure these are tuned (can do with SysId)
-		public static final double kP = 0.015; // TODO: Optimize
+		public static final double kP = 0.015; // TODO: Optimize: 0.01?
 		public static final double kI = 0.0;
-		public static final double kD = 0.001; // TODO: Optimize
+		public static final double kD = 0; // TODO: Optimize: 0.003?
 
-		public static final double kTolerance = 4; // TODO: Change this
-
-		public static final double kMinElevatorExtension = 0.0;
+		public static final double kTolerance = 4;
 	}
 
 	public static final class AutoAlignConstants {
@@ -180,36 +230,51 @@ public class Constants {
 		 * The {@code Transform3d} expressing the pose of the first camera relative to
 		 * the pose of the robot.
 		 */
-		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.3, 0.0, 0.2),
-				new Rotation3d(0, Units.degreesToRadians(-20), 0));
+		public static Transform3d kRobotToCamera1 = new Transform3d(new Translation3d(0.0, 0.0, 0.2),
+				new Rotation3d(0, Units.degreesToRadians(-10), 0));
 
 		/**
 		 * The {@code Transform3d} expressing the pose of the second camera relative to
 		 * the pose of the robot.
 		 */
-		public static Transform3d kRobotToCamera2 = new Transform3d(new Translation3d(-0.5, 0.0, 0.5),
-				new Rotation3d(0, Units.degreesToRadians(0), Units.degreesToRadians(180)));
+		public static Transform3d kRobotToCamera2 = new Transform3d(new Translation3d(-0.5, -0.0, 0.2),
+				new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
 
 		/**
 		 * The {@code Pose2d}s of the robot relative to the {@code Pose2d} of the target
 		 * {@code AprilTag} to align the robot to that {@code AprilTag}.
 		 */
 		static Transform2d[] kRobotToTags = { transform(1.1, 0.0, 180),
-				transform(0.60, 0.0, 180) };
+				transform(0.35, 0.0, 180) };
+		// transform(0.60, 0.0, 180) };
+		// TODO: Optimize
 
 		/**
 		 * The {@code Pose2d}s of the robot relative to the {@code Pose2d} of the target
 		 * {@code AprilTag} to align the robot to the left of that {@code AprilTag}.
 		 */
 		static Transform2d[] kRobotToTagsLeft = { transform(1.1, 0, 180),
-				transform(0.60, -0.165, 180) };
-
+				transform(0.45, -0.185, 180) };
+		// transform(0.60, -0.165, 180) };
+		// TODO: decrease y to align more to the left
 		/**
 		 * The {@code Pose2d}s of the robot relative to the {@code Pose2d} of the target
 		 * {@code AprilTag} to align the robot to the right of that {@code AprilTag}.
 		 */
 		static Transform2d[] kRobotToTagsRight = { transform(1.1, 0, 180),
-				transform(0.60, 0.215, 180) };
+				transform(0.54, 0.200, 180) };
+		// transform(0.60, 0.195, 180) };
+		// decrease y to align more to the left
+
+		/**
+		 * The offset for alignment to algaes (positive: closer to algae).
+		 */
+		static double kForwrdAdjustmentAlgaeRemoval = 0.25; // TODO: need to check
+
+		/**
+		 * The offset for alignment to coral stations (positive: closer to station).
+		 */
+		static double kForwrdAdjustmentCoralStation = 0.1; // TODO: increase for robot to align more closely to station
 
 		/**
 		 * The {@code Pose2d}s of the robot relative to the {@code Pose2d} of the target
@@ -226,9 +291,30 @@ public class Constants {
 				transform(0.60, 0.0, 180) };
 
 		/**
-		 * A {@code Map} storing the distance to travel to score at each scoring level.
+		 * A {@code Map} storing the distance to move forward to score at each scoring
+		 * level.
 		 */
-		static Map<Integer, Double> kOffsets = Map.of(1, 0.13, 2, 0.13, 3, 0.13, 4, 0.05);
+		static Map<Integer, Double> kLevelOffset = Map.of(
+				1, 0.13, // L1
+				2, 0.2, // L2
+				3, 0.2, // L3
+				4, 0.05); // L4
+		// TODO: need to check
+		// increase the offset value to get closer to the tag
+
+		/**
+		 * A {@code Map} storing the additional distance to move forward/backward for
+		 * some {@code AprilTag}s (positive: closer to the tag).
+		 */
+		static Map<Integer, Double> kForwardAdjustment = Map.of();
+		// Map.of(18, 0.015, 22, 0.01);
+
+		/**
+		 * A {@code Map} storing the additional distance to move to left/right for
+		 * some {@code AprilTag}s (positive: strafe left when facing toward the tag).
+		 */
+		static Map<Integer, Double> kSideAdjustment = Map.of();
+		// Map.of(19, -0.02, 21, -0.01, 22, -0.01);
 
 	}
 
